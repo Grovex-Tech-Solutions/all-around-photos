@@ -1,105 +1,111 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import type { Product, CartItem } from '@/lib/products';
 
-export interface CartItem {
-  id: string;
-  quantity: number;
-  size: string;
-  color: string;
-  name: string;
-  price: number; // in cents
-  image: string;
-  version: number;
-}
-
-interface CartContextType {
+interface CartContextValue {
   items: CartItem[];
-  addItem: (item: Omit<CartItem, 'name' | 'price' | 'image'>) => void;
-  removeItem: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  addItem: (product: Product, quantity?: number, size?: string, color?: string) => void;
+  removeItem: (productId: string, size?: string, color?: string) => void;
+  updateQuantity: (productId: string, quantity: number, size?: string, color?: string) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
 }
 
-const CartContext = createContext<CartContextType | undefined>(undefined);
+const CartContext = createContext<CartContextValue | null>(null);
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
+const CART_STORAGE_KEY = 'all-around-cart';
+
+function getCartItemKey(productId: string, size?: string, color?: string): string {
+  return `${productId}-${size ?? 'none'}-${color ?? 'none'}`;
+}
+
+export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from localStorage on mount
+  // Load cart from localStorage on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('cart');
+      const stored = localStorage.getItem(CART_STORAGE_KEY);
       if (stored) {
         setItems(JSON.parse(stored));
       }
-    } catch (err) {
-      console.error('Failed to load cart from localStorage:', err);
+    } catch {
+      // Ignore parse errors
     }
-    setIsHydrated(true);
+    setIsLoaded(true);
   }, []);
 
-  // Save to localStorage whenever items change
+  // Save cart to localStorage on change
   useEffect(() => {
-    if (isHydrated) {
-      localStorage.setItem('cart', JSON.stringify(items));
+    if (isLoaded) {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
     }
-  }, [items, isHydrated]);
+  }, [items, isLoaded]);
 
-  const addItem = (item: Omit<CartItem, 'name' | 'price' | 'image'>) => {
-    setItems(prev => {
+  const addItem = useCallback((product: Product, quantity = 1, size?: string, color?: string) => {
+    setItems((prev) => {
+      const key = getCartItemKey(product.id, size, color);
       const existing = prev.find(
-        i => i.id === item.id && i.size === item.size && i.color === item.color
+        (item) => getCartItemKey(item.product.id, item.size, item.color) === key
       );
       if (existing) {
-        return prev.map(i =>
-          i === existing ? { ...i, quantity: i.quantity + item.quantity } : i
+        return prev.map((item) =>
+          getCartItemKey(item.product.id, item.size, item.color) === key
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
         );
       }
-      return [...prev, { ...item, name: '', price: 0, image: '', version: item.version }];
+      return [...prev, { product, quantity, size, color }];
     });
-  };
+  }, []);
 
-  const removeItem = (id: string) => {
-    setItems(prev => prev.filter(i => i.id !== id));
-  };
-
-  const updateQuantity = (id: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeItem(id);
-      return;
-    }
-    setItems(prev =>
-      prev.map(i => (i.id === id ? { ...i, quantity } : i))
+  const removeItem = useCallback((productId: string, size?: string, color?: string) => {
+    const key = getCartItemKey(productId, size, color);
+    setItems((prev) =>
+      prev.filter((item) => getCartItemKey(item.product.id, item.size, item.color) !== key)
     );
-  };
+  }, []);
 
-  const clearCart = () => {
+  const updateQuantity = useCallback(
+    (productId: string, quantity: number, size?: string, color?: string) => {
+      if (quantity <= 0) {
+        removeItem(productId, size, color);
+        return;
+      }
+      const key = getCartItemKey(productId, size, color);
+      setItems((prev) =>
+        prev.map((item) =>
+          getCartItemKey(item.product.id, item.size, item.color) === key
+            ? { ...item, quantity }
+            : item
+        )
+      );
+    },
+    [removeItem]
+  );
+
+  const clearCart = useCallback(() => {
     setItems([]);
-  };
+  }, []);
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const totalPrice = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
-  const value: CartContextType = {
-    items,
-    addItem,
-    removeItem,
-    updateQuantity,
-    clearCart,
-    totalItems,
-    totalPrice,
-  };
-
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  return (
+    <CartContext.Provider
+      value={{ items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice }}
+    >
+      {children}
+    </CartContext.Provider>
+  );
 }
 
-export function useCart() {
+export function useCart(): CartContextValue {
   const context = useContext(CartContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useCart must be used within a CartProvider');
   }
   return context;

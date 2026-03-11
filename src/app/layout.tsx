@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Playfair_Display } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import { SITE_CONFIG } from '@/lib/constants';
 import { Header } from '@/components/layout/Header';
@@ -9,12 +9,6 @@ import { CartProvider } from '@/lib/cart';
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
-  display: 'swap',
-});
-
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  variable: '--font-playfair',
   display: 'swap',
 });
 
@@ -160,14 +154,14 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
+    <html lang="en" className={inter.variable}>
       <head>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       </head>
-      <body className="bg-neutral-50 font-sans text-neutral-900 antialiased">
+      <body className="bg-bg font-sans text-text-primary antialiased">
         <CartProvider>
           <div className="flex min-h-screen flex-col">
             <Header />

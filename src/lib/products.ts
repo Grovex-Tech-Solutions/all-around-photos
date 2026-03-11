@@ -1,104 +1,109 @@
 import { z } from 'zod';
+import { type ProductCategory, PRODUCT_CATEGORIES } from '@/lib/constants';
 
-export const productSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  slug: z.string(),
-  description: z.string(),
-  price: z.number().int().positive(), // in cents
-  image: z.string(),
-  colors: z.array(z.string()),
-  sizes: z.array(z.string()),
-  version: z.number().int(),
-  category: z.enum(['apparel', 'custom', 'drone']),
+// Zod schema for build-time validation of product data
+const productSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().min(1),
+  price: z.number().int().positive(), // cents
+  category: z.enum(['hoodies', 'tshirts', 'coasters', 'other']),
+  sizes: z.array(z.string()).optional(),
+  colors: z.array(z.string()).optional(),
+  image: z.string().startsWith('/products/'),
   featured: z.boolean().optional(),
+  version: z.number().int().positive(), // increment when price/details change
 });
 
 export type Product = z.infer<typeof productSchema>;
 
-export const products: Product[] = [
-  {
-    id: 'cricut-apparel-1',
-    name: 'Classic Cricut T-Shirt',
-    slug: 'cricut-apparel',
-    description: 'Premium cotton t-shirt with custom Cricut design. Perfect for showcasing your projects.',
-    price: 1999, // $19.99
-    image: '/products/cricut-tshirt.jpg',
-    colors: ['Navy', 'Black', 'White', 'Heather Gray'],
-    sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-    version: 1,
-    category: 'apparel',
-    featured: true,
-  },
-  {
-    id: 'cricut-hoodie-1',
-    name: 'Cricut Premium Hoodie',
-    slug: 'cricut-hoodie',
-    description: 'Comfortable hoodie perfect for creative professionals and Cricut enthusiasts.',
-    price: 3999, // $39.99
-    image: '/products/cricut-hoodie.jpg',
-    colors: ['Navy', 'Black', 'Charcoal', 'Forest Green'],
-    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-    version: 1,
-    category: 'apparel',
-    featured: true,
-  },
-  {
-    id: 'cricut-cap-1',
-    name: 'Cricut Snapback Cap',
-    slug: 'cricut-cap',
-    description: 'Classic snapback cap with embroidered Cricut logo.',
-    price: 1499, // $14.99
-    image: '/products/cricut-cap.jpg',
-    colors: ['Navy', 'Black', 'White'],
-    sizes: ['One Size'],
-    version: 1,
-    category: 'apparel',
-  },
-  {
-    id: 'custom-print-1',
-    name: 'Custom Design Print',
-    slug: 'custom-design-print',
-    description: 'Personalized print service for your custom Cricut designs.',
-    price: 2999, // $29.99
-    image: '/products/custom-print.jpg',
-    colors: ['Color', 'Black & White'],
-    sizes: ['8x10', '11x14', '16x20'],
-    version: 1,
-    category: 'custom',
-  },
-  {
-    id: 'drone-photo-1',
-    name: 'Drone Photography Package',
-    slug: 'drone-photo-package',
-    description: 'Professional aerial photography package with 50+ edited photos.',
-    price: 39999, // $399.99
-    image: '/products/drone-photo.jpg',
-    colors: ['Standard'],
-    sizes: ['Up to 1 hour'],
-    version: 1,
-    category: 'drone',
-    featured: true,
-  },
-];
-
-export function getProductBySlug(slug: string): Product | undefined {
-  return products.find(p => p.slug === slug);
+export interface CartItem {
+  product: Product;
+  quantity: number;
+  size?: string;
+  color?: string;
 }
 
-export function getProductsByCategory(category: Product['category']): Product[] {
-  return products.filter(p => p.category === category);
+// Placeholder products — owner will replace images
+const rawProducts = [
+  {
+    id: 'classic-hoodie',
+    name: 'Classic Logo Hoodie',
+    description: 'Premium heavyweight hoodie with custom Cricut-cut design.',
+    price: 4500,
+    category: PRODUCT_CATEGORIES.HOODIES,
+    sizes: ['S', 'M', 'L', 'XL', '2XL'],
+    colors: ['Black', 'White', 'Gray'],
+    image: '/products/placeholder.svg',
+    featured: true,
+    version: 1,
+  },
+  {
+    id: 'graphic-tee',
+    name: 'Graphic Tee',
+    description: 'Soft cotton tee with precision Cricut vinyl graphics.',
+    price: 2500,
+    category: PRODUCT_CATEGORIES.TSHIRTS,
+    sizes: ['S', 'M', 'L', 'XL', '2XL'],
+    colors: ['Black', 'White'],
+    image: '/products/placeholder.svg',
+    featured: true,
+    version: 1,
+  },
+  {
+    id: 'custom-coasters-set',
+    name: 'Custom Coasters (Set of 4)',
+    description: 'Handcrafted coasters with custom designs.',
+    price: 1500,
+    category: PRODUCT_CATEGORIES.COASTERS,
+    image: '/products/placeholder.svg',
+    featured: true,
+    version: 1,
+  },
+  {
+    id: 'premium-hoodie',
+    name: 'Premium Cut Hoodie',
+    description: 'Heavyweight hoodie with multi-layer Cricut design.',
+    price: 5500,
+    category: PRODUCT_CATEGORIES.HOODIES,
+    sizes: ['S', 'M', 'L', 'XL', '2XL'],
+    colors: ['Black', 'Navy'],
+    image: '/products/placeholder.svg',
+    version: 1,
+  },
+  {
+    id: 'vintage-tee',
+    name: 'Vintage Logo Tee',
+    description: 'Retro-style tee with distressed Cricut print.',
+    price: 2800,
+    category: PRODUCT_CATEGORIES.TSHIRTS,
+    sizes: ['S', 'M', 'L', 'XL'],
+    colors: ['Black', 'Charcoal'],
+    image: '/products/placeholder.svg',
+    version: 1,
+  },
+  {
+    id: 'photo-coasters',
+    name: 'Photo Coasters (Set of 4)',
+    description: 'Custom photo-printed coasters — great for gifts.',
+    price: 2000,
+    category: PRODUCT_CATEGORIES.COASTERS,
+    image: '/products/placeholder.svg',
+    version: 1,
+  },
+] satisfies Product[];
+
+// Validate product data at module load (catches errors at dev/build time)
+export const products: Product[] = rawProducts.map((p) => productSchema.parse(p));
+
+export function getProductBySlug(slug: string): Product | undefined {
+  return products.find((p) => p.id === slug);
+}
+
+export function getProductsByCategory(category: ProductCategory): Product[] {
+  return products.filter((p) => p.category === category);
 }
 
 export function getFeaturedProducts(): Product[] {
-  return products.filter(p => p.featured);
-}
-
-export function validateProduct(product: unknown): product is Product {
-  try {
-    productSchema.parse(product);
-    return true;
-  } catch {
-    return false;
-  }
+  return products.filter((p) => p.featured);
 }
