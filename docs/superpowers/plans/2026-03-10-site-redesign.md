@@ -18,6 +18,7 @@
 
 | File | Responsibility |
 | --- | --- |
+| `IMAGE_REQUIREMENTS.md` | Image spec for owner: dimensions, formats, file sizes, naming conventions, validation checklist |
 | `src/lib/products.ts` | Product data array + types + helper functions (getProductBySlug, getProductsByCategory) |
 | `src/lib/cart.tsx` | CartProvider context, useCart hook, localStorage persistence |
 | `src/lib/validations/custom-order.ts` | Zod schema for custom order form |
@@ -161,6 +162,27 @@ Expected: `stripe` present, `prisma` and `lucide-react` absent
 git add package.json package-lock.json
 git commit -m "chore: replace prisma with stripe dependency, remove lucide-react"
 ```
+
+**Icon strategy:** Since lucide-react is removed, the app will use **inline SVG icons** (as seen in Header cart icon, ProductModal close button, etc.). This approach is intentional for:  
+- **No external icon dependency** — icons are defined inline in components  
+- **Full control** — easy to customize colors, sizes, and animations via className  
+- **Small bundle** — embedded SVGs without extra package overhead
+
+If inline SVGs become hard to maintain (duplicate code, many icons), the fallback strategy is to **create a centralized `Icon` component** (`src/components/ui/Icon.tsx`) that exports reusable icon functions (e.g., `CartIcon()`, `CloseIcon()`). This lets you define each icon once and reuse it everywhere.
+
+**Impacted components using inline SVGs:**
+- `Header.tsx` — cart icon with item badge  
+- `ProductModal.tsx` — close button (X icon)  
+- `CartItem.tsx` — remove button (trash icon) and quantity +/- buttons  
+- `CategoryFilter.tsx` — (if needed for mobile toggle icon)
+
+**Migration path if needed:** To convert inline SVGs to a shared `Icon` component:
+1. Create `src/components/ui/Icon.tsx` with exported icon functions (e.g., `export function CartIcon({ ... }) { ... }`)
+2. Replace `<svg>...</svg>` blocks in each component with calls like `<CartIcon className="h-6 w-6" />`
+3. Unify props (size, color, strokeWidth) in the Icon component for consistency
+4. Update imports in Header, ProductModal, CartItem
+
+For now, inline SVGs are acceptable; create the Icon component only if maintenance becomes a bottleneck.
 
 ### Task 2: Delete old files
 
@@ -405,7 +427,20 @@ export type ProductCategory = (typeof PRODUCT_CATEGORIES)[keyof typeof PRODUCT_C
 
 - [ ] **Step 2: Clean up utils.ts**
 
-Keep `cn`, `formatCurrency`, `formatDate`, `isValidEmail`, `debounce`. Remove `generateAccessCode`. Note: `formatCurrency` already takes dollar amounts (not cents). Throughout the plan, product prices are in cents and we call `formatCurrency(product.price / 100)` — no change needed to the function itself.
+Keep `cn`, `formatCurrency`, `formatDate`, `isValidEmail`, `debounce`. Remove `generateAccessCode`. 
+
+**Important price conversion note:** `formatCurrency` **expects a dollar amount** (e.g., `19.99`), but **product prices are stored in cents** in the product data. All callers must convert cents to dollars before passing to `formatCurrency` by dividing by 100. For example:  
+```typescript
+// Product prices are in cents (e.g., 1999 = $19.99)
+const product = { price: 1999 }; // cents
+
+// Convert to dollars and format
+formatCurrency(product.price / 100) // => "$19.99"
+
+// ❌ WRONG (would display "$1999.00")
+formatCurrency(product.price) 
+```
+Searchable patterns to check: `formatCurrency(product.price / 100)` is the correct usage throughout the codebase (in ProductCard, ProductModal, CartItem, and checkout validation). No change needed to the function itself.
 
 - [ ] **Step 3: Commit**
 
@@ -558,7 +593,7 @@ git commit -m "feat: update layout with dark theme, new metadata, remove Playfai
 ```tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
@@ -1000,7 +1035,11 @@ export function getFeaturedProducts(): Product[] {
 }
 ```
 
-- [ ] **Step 2: Create placeholder product images directory**
+- [ ] **Step 2: Create IMAGE_REQUIREMENTS.md at project root**
+
+This file specifies image dimensions (400x400 for products, 1200x800 for drone), formats (JPG/PNG/WebP), file sizes (200KB/300KB/400KB), naming conventions (lowercase, slugified), fallback behavior (serve placeholder.svg on 404), loading states (lazy, blur-up, skeleton), and compression/CDN caching strategy. Include an owner checklist for validating images before upload.
+
+- [ ] **Step 3: Create placeholder product images directory**
 
 ```bash
 mkdir -p public/products
@@ -1361,6 +1400,29 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   };
+  // Accessibility: Focus management for modal
+  useEffect(() => {
+    const triggerElement = document.activeElement as HTMLElement;
+    const closeButton = document.querySelector('[aria-label="Close"]') as HTMLButtonElement;
+    if (closeButton) closeButton.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'Tab' || e.key === 'Shift+Tab') {
+        const focusable = Array.from(document.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])'));
+        const idx = focusable.indexOf(document.activeElement as Element);
+        const isShift = e.shiftKey;
+        if (isShift && idx === 0) { e.preventDefault(); (focusable[focusable.length - 1] as HTMLElement)?.focus(); }
+        else if (!isShift && idx === focusable.length - 1) { e.preventDefault(); (focusable[0] as HTMLElement)?.focus(); }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      if (triggerElement?.focus) triggerElement.focus();
+    };
+  }, [onClose]);
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -1633,7 +1695,7 @@ export function CartItem({ item }: CartItemProps) {
 ```tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/lib/cart';
 import { CartItem } from '@/components/cart/CartItem';
@@ -1659,12 +1721,23 @@ export default function CartPage() {
     );
   }
 
-  const handleCheckout = async () => {
+  const handleCheckout = useCallback(async () => {
     setCheckoutError(null);
     try {
+      // Fetch CSRF token from server
+      const csrfRes = await fetch('/api/csrf-token', {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const { csrfToken } = await csrfRes.json();
+
       const res = await fetch('/api/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
+        },
+        credentials: 'include',
         body: JSON.stringify({
           items: items.map((item) => ({
             productId: item.product.id,
@@ -1678,13 +1751,15 @@ export default function CartPage() {
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
+      } else if (res.status === 429) {
+        setCheckoutError('Too many checkout attempts. Please wait a moment and try again.');
       } else {
         setCheckoutError(data.error || 'Checkout failed. Please try again.');
       }
     } catch {
       setCheckoutError('Unable to connect. Please try again.');
     }
-  };
+  }, [items, setCheckoutError]);
 
   return (
     <div className="min-h-screen bg-bg py-12">
@@ -1744,7 +1819,46 @@ git commit -m "feat: add cart page with item management and checkout button"
 
 ## Chunk 3: Stripe Checkout + Form Pages
 
-### Task 18: Create Stripe checkout API route
+### Task 18: Create CSRF token endpoint
+
+**Files:**
+
+- Create: `src/app/api/csrf-token/route.ts`
+
+- [ ] **Step 1: Create CSRF token endpoint**
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import crypto from 'crypto';
+
+export async function GET(request: NextRequest) {
+  const cookieStore = await cookies();
+  
+  let csrfToken = cookieStore.get('csrf-token')?.value;
+  
+  if (!csrfToken) {
+    csrfToken = crypto.randomBytes(32).toString('hex');
+    cookieStore.set('csrf-token', csrfToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60
+    });
+  }
+
+  return NextResponse.json({ csrfToken });
+}
+```
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add src/app/api/csrf-token/route.ts
+git commit -m "feat: add CSRF token generation endpoint"
+```
+
+### Task 19: Create Stripe checkout API route with CSRF and rate limiting
 
 **Files:**
 
@@ -1771,8 +1885,42 @@ const checkoutRequestSchema = z.object({
   items: z.array(checkoutItemSchema).min(1).max(50),
 });
 
+const checkoutRateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function checkCheckoutRateLimit(ip: string | null, limit = 3, windowMs = 5 * 60 * 1000): boolean {
+  const key = ip || 'unknown';
+  const now = Date.now();
+  const entry = checkoutRateLimitMap.get(key);
+  if (!entry || now > entry.resetAt) {
+    checkoutRateLimitMap.set(key, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  if (entry.count >= limit) return false;
+  entry.count++;
+  return true;
+}
+
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: max 3 checkout attempts per IP per 5 minutes
+    const ip = request.headers.get('x-forwarded-for');
+    if (!checkCheckoutRateLimit(ip)) {
+      return NextResponse.json(
+        { error: 'Too many checkout attempts. Please wait before trying again.' },
+        { status: 429 }
+      );
+    }
+
+    // CSRF token validation
+    const csrfToken = request.headers.get('x-csrf-token');
+    const cookieStore = request.cookies.get('csrf-token')?.value;
+    if (!csrfToken || !cookieStore || csrfToken !== cookieStore) {
+      return NextResponse.json(
+        { error: 'Invalid request. Please refresh and try again.' },
+        { status: 401 }
+      );
+    }
+
     const key = process.env.STRIPE_SECRET_KEY;
     if (!key) {
       return NextResponse.json(
@@ -1841,7 +1989,11 @@ export async function POST(request: NextRequest) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid cart data.' }, { status: 400 });
     }
-    console.error('Stripe checkout error:', err);
+    // Sanitize sensitive data before logging
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    const hasSensitiveData = message.includes('api_key') || message.includes('token') || message.includes('secret');
+    const sanitizedMessage = hasSensitiveData ? 'Payment processing error' : message;
+    console.error('Stripe checkout error:', sanitizedMessage);
     return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 502 });
   }
 }
@@ -1927,7 +2079,31 @@ git add src/app/(public)/checkout/
 git commit -m "feat: add checkout success and cancel pages"
 ```
 
-### Task 20: Rewrite email utility
+### Task 20: Create Stripe webhook handler
+
+**Files:**
+
+- Create: `src/app/api/webhook/route.ts`
+
+- [ ] **Step 1: Create webhook endpoint**
+
+Handles `checkout.session.completed` event to process completed purchases (create order record, decrement inventory, send confirmation email). Also handles `charge.refunded` for refund processing. Verifies Stripe signature using `STRIPE_WEBHOOK_SECRET` environment variable.
+
+- [ ] **Step 2: Set environment variable**
+
+Add to `.env.local`:
+```
+STRIPE_WEBHOOK_SECRET=whsec_test_...
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add src/app/api/webhook/route.ts
+git commit -m "feat: add Stripe webhook handler for order confirmation and refunds"
+```
+
+### Task 21: Rewrite email utility
 
 **Files:**
 
@@ -2031,7 +2207,7 @@ git add src/lib/email.ts
 git commit -m "feat: rewrite email utility with generic notification system"
 ```
 
-### Task 21: Create form validation schemas
+### Task 22: Create form validation schemas
 
 **Files:**
 
@@ -2147,7 +2323,7 @@ git add src/lib/validations/
 git commit -m "feat: add Zod validation schemas for custom order, drone quote, and contact forms"
 ```
 
-### Task 22: Create form API routes
+### Task 23: Create form API routes
 
 **Files:**
 
@@ -2194,8 +2370,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, referenceId });
   } catch (err) {
-    if (err instanceof Error && 'issues' in err) {
-      return NextResponse.json({ error: 'Validation failed', details: err }, { status: 400 });
+    if (err instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validation failed', details: err.flatten() }, { status: 400 });
     }
     console.error('Custom order submission error:', err);
     return NextResponse.json({ error: 'Failed to submit' }, { status: 500 });
@@ -2218,7 +2394,7 @@ git add src/app/api/custom-order/ src/app/api/drone-quote/ src/app/api/contact/
 git commit -m "feat: add API routes for custom order, drone quote, and contact forms"
 ```
 
-### Task 23: Create form components
+### Task 24: Create form components
 
 **Files:**
 
@@ -2249,7 +2425,7 @@ git add src/components/forms/
 git commit -m "feat: add custom order, drone quote, and contact form components"
 ```
 
-### Task 24: Create custom orders page
+### Task 25: Create custom orders page
 
 **Files:**
 
@@ -2270,7 +2446,7 @@ git add src/app/(public)/custom/ public/custom-work/
 git commit -m "feat: add custom orders page with gallery and order form"
 ```
 
-### Task 25: Create drone services page
+### Task 26: Create drone services page
 
 **Files:**
 
@@ -2291,7 +2467,7 @@ git add src/app/(public)/drone/ public/drone/
 git commit -m "feat: add drone services page with gallery and quote form"
 ```
 
-### Task 26: Update contact page with new form
+### Task 27: Update contact page with new form
 
 **Files:**
 
@@ -2312,7 +2488,7 @@ git commit -m "feat: update contact page with new form and dark theme"
 
 ## Chunk 4: Homepage + Final Polish
 
-### Task 27: Create homepage components
+### Task 28: Create homepage components
 
 **Files:**
 
@@ -2344,7 +2520,7 @@ git add src/components/home/
 git commit -m "feat: add homepage components — hero, category cards, featured products, drone banner"
 ```
 
-### Task 28: Assemble homepage
+### Task 29: Assemble homepage
 
 **Files:**
 
@@ -2377,7 +2553,7 @@ git add src/app/page.tsx
 git commit -m "feat: assemble homepage with all sections"
 ```
 
-### Task 29: Clean up remaining files
+### Task 30: Clean up remaining files
 
 **Files:**
 
@@ -2410,27 +2586,265 @@ git add -A
 git commit -m "chore: clean up remaining old references and verify build"
 ```
 
-### Task 30: Final verification
+### Task 31: Add automated testing
 
-- [ ] **Step 1: Run dev server and verify all pages load**
+**Frameworks:**
+- Unit/Integration: Vitest with React Test Library
+- E2E: Playwright
 
-```bash
-npm run dev
+- [ ] **Step 1: Set up Vitest and create unit tests**
+
+Create `src/lib/__tests__/products.test.ts`:
+
+```typescript
+import { describe, it, expect } from 'vitest';
+import { products, getProductBySlug } from '@/lib/products';
+
+describe('Products', () => {
+  it('should have price in cents', () => {
+    const product = products[0];
+    expect(product.price).toBeGreaterThan(100); // at least $1.00
+  });
+
+  it('should find product by slug', () => {
+    const product = getProductBySlug('cricut-apparel');
+    expect(product).toBeDefined();
+  });
+
+  it('should validate product schema', () => {
+    products.forEach(p => {
+      expect(p.name).toBeTruthy();
+      expect(Array.isArray(p.colors)).toBe(true);
+      expect(Array.isArray(p.sizes)).toBe(true);
+    });
+  });
+});
 ```
 
-Visit each page: `/`, `/shop`, `/custom`, `/cart`, `/drone`, `/about`, `/contact`, `/checkout/success`, `/checkout/cancel`
+Create `src/lib/__tests__/cart.test.ts` (test useCart hook):
 
-- [ ] **Step 2: Test cart flow**
+```typescript
+import { renderHook, act } from '@testing-library/react';
+import { useCart } from '@/lib/cart';
+import { expect, it, describe, beforeEach } from 'vitest';
 
-Add items to cart, verify localStorage persistence, verify cart page displays correctly, verify checkout button calls API (will fail without Stripe key — that's expected).
+describe('useCart', () => {
+  beforeEach(() => localStorage.clear());
 
-- [ ] **Step 3: Test form submissions**
+  it('should add item to cart', () => {
+    const { result } = renderHook(() => useCart());
+    act(() => {
+      result.current.addItem({ id: '1', quantity: 1, size: 'M', color: 'Navy' });
+    });
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.totalItems).toBe(1);
+  });
 
-Submit custom order, drone quote, and contact forms. Verify API routes respond with success and console logs show email content.
+  it('should persist to localStorage', () => {
+    const { result } = renderHook(() => useCart());
+    act(() => {
+      result.current.addItem({ id: '1', quantity: 2, size: 'L', color: 'Black' });
+    });
+    expect(localStorage.getItem('cart')).toBeTruthy();
+  });
+});
+```
 
-- [ ] **Step 4: Final commit if any fixes needed**
+- [ ] **Step 2: Run test coverage**
+
+```bash
+npm run test:coverage
+```
+
+Target: >80% coverage for critical paths (`src/lib/`, `src/lib/validations/`). Fix any gaps.
+
+- [ ] **Step 3: Set up Playwright E2E tests**
+
+Create `e2e/shop-to-checkout.spec.ts`:
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+test('shop to checkout flow', async ({ page }) => {
+  // Navigate shop page, add product to cart
+  await page.goto('/shop');
+  await page.click('text=Add to Cart');
+  await page.click('[aria-label*="Cart"]');
+  
+  // Verify cart displays item
+  expect(await page.locator('text=Cart Items').count()).toBeGreaterThan(0);
+  
+  // Attempt checkout (will redirect to Stripe)
+  await page.click('text=Proceed to Checkout');
+  await expect(page).toHaveURL(/stripe\.com|checkout/);
+});
+```
+
+- [ ] **Step 4: Run automated tests**
+
+```bash
+npm run test              # Vitest unit tests
+npm run e2e              # Playwright E2E tests
+npm run test:coverage    # Coverage report
+```
+
+- [ ] **Step 5: Commit tests**
+
+```bash
+git add src/__tests__/ e2e/ && git commit -m "test: add Vitest and Playwright test suite"
+```
+
+
+### Task 32: Add accessibility improvements
+
+- [ ] **Step 1: Add ARIA labels to interactive elements**
+
+ProductCard, ProductModal, CartIcon, and all interactive buttons need descriptive ARIA labels:
+
+```typescript
+// Example: CartIcon with dynamic count
+<button 
+  aria-label={`Shopping cart with ${itemCount} items`} 
+  onClick={toggleCart}
+  className="relative"
+>
+  <ShoppingCart size={20} />
+  {itemCount > 0 && <span className="badge">{itemCount}</span>}
+</button>
+
+// Example: ProductCard add-to-cart
+<button 
+  aria-label={`Add ${product.name} to cart`}
+  onClick={handleAdd}
+>
+  Add to Cart
+</button>
+
+// Example: Modal close button
+<button 
+  aria-label="Close product details"
+  onClick={onClose}
+>
+  ✕
+</button>
+```
+
+- [ ] **Step 2: Implement focus management in ProductModal**
+
+Modal should focus close button on open, trap Tab/Shift+Tab within modal, and restore focus to trigger button on close:
+
+```typescript
+useEffect(() => {
+  const triggerElement = document.activeElement as HTMLElement;
+  
+  // Focus close button on modal open
+  const closeButton = document.querySelector('[aria-label*="Close"]') as HTMLButtonElement;
+  if (closeButton) closeButton.focus();
+  
+  // Keyboard event handler for Escape and Tab trap
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') onClose();
+    
+    if (e.key === 'Tab' || e.key === 'Shift+Tab') {
+      const focusable = Array.from(
+        document.querySelectorAll(
+          'button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+      ) as HTMLElement[];
+      const idx = focusable.indexOf(document.activeElement as HTMLElement);
+      
+      if (e.shiftKey && idx === 0) {
+        e.preventDefault();
+        focusable[focusable.length - 1]?.focus();
+      } else if (!e.shiftKey && idx === focusable.length - 1) {
+        e.preventDefault();
+        focusable[0]?.focus();
+      }
+    }
+  };
+  
+  document.addEventListener('keydown', handleKeyDown);
+  
+  return () => {
+    document.removeEventListener('keydown', handleKeyDown);
+    if (triggerElement?.focus) triggerElement.focus(); // Restore focus
+  };
+}, [onClose]);
+```
+
+- [ ] **Step 3: Add live regions for dynamic updates**
+
+Cart updates and form validation errors should use `aria-live="polite"` and role="alert" for screen reader announcement:
+
+```typescript
+// Live region for form errors
+<div aria-live="polite" aria-atomic="true" className="sr-only">
+  {validationError && <span role="alert">{validationError}</span>}
+</div>
+
+// Live region for cart updates
+<div aria-live="polite" role="status">
+  {isLoading && <span>Loading cart...</span>}
+  {items.length === 0 && <span>Your cart is empty</span>}
+  {items.length > 0 && <span>{items.length} items in cart</span>}
+</div>
+
+// Form label example
+<label htmlFor="size-select">Select Size:</label>
+<select id="size-select" aria-describedby="size-help">
+  <option value="">Choose a size</option>
+  {product.sizes.map(s => <option key={s}>{s}</option>)}
+</select>
+<span id="size-help" className="text-sm text-gray-500">Required field</span>
+```
+
+- [ ] **Step 4: Test accessibility with keyboard and screen reader**
+
+**Keyboard Navigation Test:**
+- Tab through entire site (all interactive elements reachable)
+- Shift+Tab works in reverse
+- Escape closes dropdowns/modals
+- Enter/Space activate buttons
+- Arrow keys work in select dropdowns
+
+**Screen Reader Test (NVDA on Windows or VoiceOver on macOS):**
+1. Start screen reader
+2. Navigate each page with arrow keys
+3. Verify all buttons announced with aria-labels
+4. Verify form labels read with inputs
+5. Verify error messages announced
+6. Verify modal focus management works
+7. Verify cart count updates announced
+
+**Checklist:**
+- [ ] All icon buttons have aria-label
+- [ ] Form inputs have associated labels (htmlFor)
+- [ ] Error messages in live regions with role="alert"
+- [ ] Modal has focus trap and Escape handling
+- [ ] Site passes axe DevTools audit (0 violations)
+- [ ] No console warnings for accessibility
+- [ ] Tab order is logical throughout
+
+- [ ] **Step 5: Commit accessibility improvements**
 
 ```bash
 git add -A
-git commit -m "fix: address issues found during final verification"
+git commit -m "feat: add ARIA labels, focus management, and keyboard navigation for accessibility"
+```
+
+### Task 33: Final verification
+
+- [ ] Verify all pages load without errors (`npm run build`)
+- [ ] Test complete user flow: browse products → add to cart → checkout (mock Stripe)
+- [ ] Verify all forms submit and send emails
+- [ ] Run automated tests: `npm run test:unit && npm run test:coverage`
+- [ ] Run e2e tests: `npm run test:e2e`
+- [ ] Check Core Web Vitals: use PageSpeed Insights on deployed version
+- [ ] Verify accessibility: Tab navigation works throughout, no console errors
+- [ ] Final deployment commit
+
+```bash
+git add -A
+git commit -m "chore: final verification complete, ready for production"
+git push origin main
 ```
