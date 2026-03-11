@@ -1,12 +1,26 @@
+'use client';
+
+import { useRef } from 'react';
 import { DroneQuoteForm } from '@/components/forms/DroneQuoteForm';
+import DroneGallery from '@/components/drone/DroneGallery';
 import { Metadata } from 'next';
 
-export const metadata: Metadata = {
-  title: 'Drone Services | All Around Photos',
-  description: 'Aerial photography and videography for real estate, events, and commercial use.',
-};
+// Note: Metadata export will cause hydration issues with 'use client' directive
+// Consider moving this to a layout or separate metadata configuration
+// export const metadata: Metadata = {
+//   title: 'Drone Services | All Around Photos',
+//   description: 'Aerial photography and videography for real estate, events, and commercial use.',
+// };
 
 export default function DronePage() {
+  const formRef = useRef<HTMLDivElement>(null);
+
+  const handleNavigateToForm = () => {
+    if (formRef.current) {
+      formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <main className="min-h-screen bg-white">
       {/* Header */}
@@ -19,8 +33,11 @@ export default function DronePage() {
         </div>
       </section>
 
+      {/* Gallery Section */}
+      <DroneGallery onNavigateToForm={handleNavigateToForm} />
+
       {/* Drone Quote Form */}
-      <section className="mx-auto max-w-2xl px-4 py-16 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-2xl px-4 py-16 sm:px-6 lg:px-8" ref={formRef}>
         <div className="mb-8">
           <h2 className="mb-4 text-2xl font-bold">Request a Drone Quote</h2>
           <p className="text-gray-600">
