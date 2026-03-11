@@ -5,29 +5,41 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 
 export function FeaturedWork() {
-  const featuredProjects = [
-    {
-      id: 1,
-      title: 'Aerial Landscape Photography',
-      category: 'Drone',
-      image: '/drone/DJI_0153.JPG',
-      description: 'Stunning high-altitude perspectives capturing natural beauty',
-    },
-    {
-      id: 2,
-      title: 'Urban Development Project',
-      category: 'Drone',
-      image: '/drone/DJI_0467.JPG',
-      description: 'Professional documentation of construction and development progress',
-    },
-    {
-      id: 3,
-      title: 'Real Estate Showcase',
-      category: 'Drone',
-      image: '/drone/DJI_0710.JPG',
-      description: 'Comprehensive aerial views of premium properties and estates',
-    },
-  ];
+'use client';
+
+import Image from 'next/image';
+import Link from 'next/link';
+import { Button } from '@/components/ui/Button';
+
+const featuredProjects = [
+  {
+    id: 1,
+    title: 'Aerial Landscape Photography',
+    category: 'Drone',
+    image: '/drone/DJI_0153.JPG',
+    description: 'Stunning high-altitude perspectives capturing natural beauty',
+  },
+  {
+    id: 2,
+    title: 'Urban Development Project',
+    category: 'Drone',
+    image: '/drone/DJI_0467.JPG',
+    description: 'Professional documentation of construction and development progress',
+  },
+  {
+    id: 3,
+    title: 'Real Estate Showcase',
+    category: 'Drone',
+    image: '/drone/DJI_0710.JPG',
+    description: 'Comprehensive aerial views of premium properties and estates',
+  },
+];
+
+export function FeaturedWork() {
+  return (
+    // ... rest of component
+  );
+}
 
   return (
     <section className="py-20 bg-slate-50">
