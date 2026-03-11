@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { CartIcon } from '@/components/cart/CartIcon';
 
 const navigation = [
   { name: 'Shop', href: '/shop' },
@@ -40,47 +41,41 @@ export function Header() {
             ))}
           </nav>
 
-          {/* Cart icon placeholder — will be replaced with CartIcon component */}
-          <div className="hidden md:flex items-center">
-            <Link
-              href="/cart"
-              className="relative text-text-secondary transition-colors hover:text-white"
-              aria-label="Shopping cart"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
-              </svg>
-            </Link>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            type="button"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="rounded p-2 text-text-secondary transition-colors hover:text-white md:hidden"
-            aria-label="Toggle menu"
-          >
-            <div className="flex h-6 w-6 flex-col items-center justify-center">
-              <span
-                className={cn(
-                  'block h-0.5 w-5 bg-current transition-all duration-300',
-                  isMenuOpen ? 'translate-y-1 rotate-45' : '-translate-y-1'
-                )}
-              />
-              <span
-                className={cn(
-                  'block h-0.5 w-5 bg-current transition-all duration-300',
-                  isMenuOpen ? 'opacity-0' : 'opacity-100'
-                )}
-              />
-              <span
-                className={cn(
-                  'block h-0.5 w-5 bg-current transition-all duration-300',
-                  isMenuOpen ? '-translate-y-1 -rotate-45' : 'translate-y-1'
-                )}
-              />
+          {/* Cart icon and mobile menu button */}
+          <div className="flex items-center gap-4">
+            <div className="hidden md:block">
+              <CartIcon />
             </div>
-          </button>
+
+            {/* Mobile Menu Button */}
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="rounded p-2 text-text-secondary transition-colors hover:text-white md:hidden"
+              aria-label="Toggle menu"
+            >
+              <div className="flex h-6 w-6 flex-col items-center justify-center">
+                <span
+                  className={cn(
+                    'block h-0.5 w-5 bg-current transition-all duration-300',
+                    isMenuOpen ? 'translate-y-1 rotate-45' : '-translate-y-1'
+                  )}
+                />
+                <span
+                  className={cn(
+                    'block h-0.5 w-5 bg-current transition-all duration-300',
+                    isMenuOpen ? 'opacity-0' : 'opacity-100'
+                  )}
+                />
+                <span
+                  className={cn(
+                    'block h-0.5 w-5 bg-current transition-all duration-300',
+                    isMenuOpen ? '-translate-y-1 -rotate-45' : 'translate-y-1'
+                  )}
+                />
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
