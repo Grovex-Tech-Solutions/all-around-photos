@@ -1,0 +1,173 @@
+import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
+import { z } from 'zod';
+import { products } from '@/lib/products';
+
+// Lazy initialize Stripe to avoid build-time errors
+function getStripeClient() {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    throw new Error('STRIPE_SECRET_KEY not configured');
+  }
+  return new Stripe(key, {
+    apiVersion: '2024-11-20',
+  });
+}
+
+// Rate limiting map: tracks checkout attempts per IP
+const checkoutRateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+function checkCheckoutRateLimit(ip: string | null, limit = 3, windowMs = 5 * 60 * 1000): boolean {
+  const key = ip || 'unknown';
+  const now = Date.now();
+  const entry = checkoutRateLimitMap.get(key);
+
+  if (!entry || now > entry.resetAt) {
+    checkoutRateLimitMap.set(key, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+
+  if (entry.count >= limit) {
+    return false;
+  }
+
+  entry.count++;
+  return true;
+}
+
+// Define cart item and request schemas
+const checkoutItemSchema = z.object({
+  id: z.string(),
+  quantity: z.number().int().positive(),
+  size: z.string(),
+  color: z.string(),
+  version: z.number().int(),
+});
+
+const checkoutRequestSchema = z.object({
+  items: z.array(checkoutItemSchema).min(1).max(50),
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    // Initialize Stripe client
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) {
+      console.error('STRIPE_SECRET_KEY not configured');
+      return NextResponse.json(
+        { error: 'Payment service not configured' },
+        { status: 500 }
+      );
+    }
+
+    const stripe = new Stripe(key, {
+      apiVersion: '2024-11-20',
+    });
+
+    // Rate limiting: max 3 checkout attempts per IP per 5 minutes
+    const ip = request.ip || request.headers.get('x-forwarded-for');
+    if (!checkCheckoutRateLimit(ip)) {
+      return NextResponse.json(
+        { error: 'Too many checkout attempts. Please wait before trying again.' },
+        { status: 429 }
+      );
+    }
+
+    // CSRF token validation
+    const csrfToken = request.headers.get('x-csrf-token');
+    const cookieStore = request.cookies.get('csrf-token')?.value;
+    if (!csrfToken || !cookieStore || csrfToken !== cookieStore) {
+      return NextResponse.json(
+        { error: 'Invalid request. Please refresh and try again.' },
+        { status: 401 }
+      );
+    }
+
+    // Parse and validate request body
+    const body = await request.json();
+    const validatedRequest = checkoutRequestSchema.parse(body);
+
+    // Validate cart items against product data
+    const validatedItems: Array<{ product: (typeof products)[0]; quantity: number; size: string; color: string }> = [];
+
+    for (const item of validatedRequest.items) {
+      const product = products.find(p => p.id === item.id);
+
+      if (!product) {
+        return NextResponse.json(
+          { error: `Product "${item.id}" not found.` },
+          { status: 404 }
+        );
+      }
+
+      if (item.version !== product.version) {
+        return NextResponse.json(
+          { error: `Product "${product.name}" has been updated. Please review your cart.`, stale: true },
+          { status: 409 }
+        );
+      }
+
+      if (item.size && product.sizes && !product.sizes.includes(item.size)) {
+        return NextResponse.json(
+          { error: `Size "${item.size}" is not available for ${product.name}.` },
+          { status: 400 }
+        );
+      }
+
+      if (item.color && product.colors && !product.colors.includes(item.color)) {
+        return NextResponse.json(
+          { error: `Color "${item.color}" is not available for ${product.name}.` },
+          { status: 400 }
+        );
+      }
+
+      validatedItems.push({
+        product,
+        quantity: item.quantity,
+        size: item.size,
+        color: item.color,
+      });
+    }
+
+    const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
+    // Create Stripe checkout session
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      line_items: validatedItems.map(item => ({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: item.product.name,
+            description: [item.size, item.color].filter(Boolean).join(' / ') || undefined,
+            images: [`${origin}${item.product.image}`],
+          },
+          unit_amount: item.product.price, // authoritative price from server
+        },
+        quantity: item.quantity,
+      })),
+      success_url: `${origin}/checkout/success`,
+      cancel_url: `${origin}/checkout/cancel`,
+    });
+
+    return NextResponse.json({ url: session.url });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Invalid cart data.' }, { status: 400 });
+    }
+
+    // Sanitize sensitive data before logging
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    const hasSensitiveData = 
+      message.includes('api_key') || 
+      message.includes('token') || 
+      message.includes('secret');
+    const sanitizedMessage = hasSensitiveData ? 'Payment processing error' : message;
+
+    console.error('Stripe checkout error:', sanitizedMessage);
+    return NextResponse.json(
+      { error: 'Something went wrong. Please try again.' },
+      { status: 502 }
+    );
+  }
+}

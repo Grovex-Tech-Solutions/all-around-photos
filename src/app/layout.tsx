@@ -4,6 +4,7 @@ import './globals.css';
 import { SITE_CONFIG } from '@/lib/constants';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { CartProvider } from '@/lib/cart';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -167,13 +168,15 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-neutral-50 font-sans text-neutral-900 antialiased">
-        <div className="flex min-h-screen flex-col">
-          <Header />
-          <main className="flex-1">
-            {children}
-          </main>
-          <Footer />
-        </div>
+        <CartProvider>
+          <div className="flex min-h-screen flex-col">
+            <Header />
+            <main className="flex-1">
+              {children}
+            </main>
+            <Footer />
+          </div>
+        </CartProvider>
       </body>
     </html>
   );
