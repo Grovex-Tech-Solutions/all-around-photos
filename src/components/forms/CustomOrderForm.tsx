@@ -30,15 +30,12 @@ export function CustomOrderForm() {
     }));
   };
 
-  const handleFieldChange = useCallback(
-    (fieldName: string) => (value: string) => {
-      setFormData((prev) => ({
-        ...prev,
-        [fieldName]: value,
-      }));
-    },
-    []
-  );
+  const handleFieldChange = (fieldName: string) => (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [fieldName]: value,
+    }));
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
