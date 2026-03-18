@@ -39,11 +39,11 @@ export default function CartPage() {
         credentials: 'include',
         body: JSON.stringify({
           items: items.map((item) => ({
-            id: item.id,
+            id: item.product.id,
             quantity: item.quantity,
             size: item.size,
             color: item.color,
-            version: item.version,
+            version: item.product.version,
           })),
         }),
       });
@@ -102,7 +102,7 @@ export default function CartPage() {
             <div className="space-y-4">
               {items.map((item) => (
                 <CartItemComponent
-                  key={item.id}
+                  key={`${item.product.id}-${item.size ?? 'none'}-${item.color ?? 'none'}`}
                   item={item}
                   onUpdateQuantity={updateQuantity}
                   onRemove={removeItem}

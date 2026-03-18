@@ -6,8 +6,8 @@ import { formatCurrency } from '@/lib/utils';
 
 interface CartItemComponentProps {
   item: CartItem;
-  onUpdateQuantity: (id: string, quantity: number) => void;
-  onRemove: (id: string) => void;
+  onUpdateQuantity: (id: string, quantity: number, size?: string, color?: string) => void;
+  onRemove: (id: string, size?: string, color?: string) => void;
 }
 
 export default function CartItemComponent({
@@ -20,8 +20,8 @@ export default function CartItemComponent({
       {/* Image */}
       <div className="relative w-24 h-24 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
         <Image
-          src={item.image}
-          alt={item.name}
+          src={item.product.image}
+          alt={item.product.name}
           fill
           className="object-cover"
           sizes="100px"
@@ -30,7 +30,7 @@ export default function CartItemComponent({
 
       {/* Details */}
       <div className="flex-1">
-        <h3 className="font-semibold text-gray-900">{item.name}</h3>
+        <h3 className="font-semibold text-gray-900">{item.product.name}</h3>
         <p className="text-sm text-gray-600">
           {item.size && item.color ? `${item.size} / ${item.color}` : ''}
         </p>
@@ -38,17 +38,17 @@ export default function CartItemComponent({
         <div className="mt-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button
-              onClick={() => onUpdateQuantity(item.id, Math.max(1, item.quantity - 1))}
+              onClick={() => onUpdateQuantity(item.product.id, Math.max(1, item.quantity - 1), item.size, item.color)}
               className="px-2 py-1 border border-gray-300 rounded text-sm font-medium hover:bg-gray-50"
-              aria-label={`Decrease quantity of ${item.name}`}
+              aria-label={`Decrease quantity of ${item.product.name}`}
             >
               −
             </button>
             <span className="px-3 font-medium">{item.quantity}</span>
             <button
-              onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+              onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1, item.size, item.color)}
               className="px-2 py-1 border border-gray-300 rounded text-sm font-medium hover:bg-gray-50"
-              aria-label={`Increase quantity of ${item.name}`}
+              aria-label={`Increase quantity of ${item.product.name}`}
             >
               +
             </button>
@@ -56,10 +56,10 @@ export default function CartItemComponent({
 
           <div className="text-right">
             <p className="text-sm text-gray-600">
-              {formatCurrency((item.price * item.quantity) / 100)}
+              {formatCurrency((item.product.price * item.quantity) / 100)}
             </p>
             <p className="text-xs text-gray-500">
-              {formatCurrency(item.price / 100)} each
+              {formatCurrency(item.product.price / 100)} each
             </p>
           </div>
         </div>
@@ -67,8 +67,8 @@ export default function CartItemComponent({
 
       {/* Remove button */}
       <button
-        onClick={() => onRemove(item.id)}
-        aria-label={`Remove ${item.name} from cart`}
+        onClick={() => onRemove(item.product.id, item.size, item.color)}
+        aria-label={`Remove ${item.product.name} from cart`}
         className="self-start text-gray-400 hover:text-red-600 transition-colors"
       >
         <svg
