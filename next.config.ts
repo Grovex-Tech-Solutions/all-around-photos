@@ -6,9 +6,8 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 const nextConfig: NextConfig = {
-  typescript: {
-    // Keep during migration — remove once all types are clean
-    ignoreBuildErrors: true,
+  turbopack: {
+    root: __dirname,
   },
   images: {
     unoptimized: true,
