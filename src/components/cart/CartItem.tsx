@@ -1,7 +1,6 @@
 'use client';
 
-import Image from 'next/image';
-import { Minus, Plus, Trash2 } from 'lucide-react';
+import { ShoppingCart, Minus, Plus, Trash2 } from 'lucide-react';
 import { useCart } from '@/lib/cart';
 import { formatCurrency } from '@/lib/utils';
 import type { CartItem as CartItemType } from '@/lib/products';
@@ -25,29 +24,28 @@ export function CartItem({ item }: CartItemProps) {
 
   return (
     <div className="flex gap-4 p-4">
-      <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded bg-slate-700">
-        <Image
+      {/* Product Image */}
+      <div className="h-24 w-24 flex-shrink-0 rounded bg-slate-700">
+        <img
           src={item.product.image}
           alt={item.product.name}
-          fill
-          sizes="96px"
-          className="object-cover"
+          className="h-full w-full object-cover"
         />
       </div>
 
+      {/* Product Details */}
       <div className="flex-1">
         <h3 className="font-semibold text-white">{item.product.name}</h3>
-
+        
         <div className="mt-2 flex gap-4 text-sm text-slate-400">
           {item.size && <span>Size: {item.size}</span>}
           {item.color && <span>Color: {item.color}</span>}
         </div>
 
-        <p className="mt-2 font-semibold text-red-500">
-          {formatCurrency(item.product.price / 100)}
-        </p>
+        <p className="mt-2 font-semibold text-red-500">{formatCurrency(item.product.price)}</p>
       </div>
 
+      {/* Quantity Controls & Total */}
       <div className="flex flex-col items-end justify-between">
         <button
           onClick={() => removeItem(item.product.id, item.size, item.color)}
@@ -77,9 +75,7 @@ export function CartItem({ item }: CartItemProps) {
           </button>
         </div>
 
-        <p className="font-bold text-white">
-          {formatCurrency(itemTotal / 100)}
-        </p>
+        <p className="font-bold text-white">{formatCurrency(itemTotal)}</p>
       </div>
     </div>
   );

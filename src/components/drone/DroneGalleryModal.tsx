@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useEffect, useRef } from 'react';
 import { DroneImage } from '@/lib/drone-images';
 
@@ -52,13 +51,13 @@ export default function DroneGalleryModal({
       ref={modalRef}
     >
       <div
-        className="relative max-h-[80vh] w-full max-w-4xl"
-        onClick={e => e.stopPropagation()}
+        className="relative w-full max-w-4xl max-h-[80vh]"
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute -top-12 right-0 text-white transition-colors hover:text-red-500"
+          className="absolute -top-12 right-0 text-white hover:text-red-500 transition-colors"
           aria-label="Close image viewer"
         >
           <svg
@@ -77,22 +76,18 @@ export default function DroneGalleryModal({
         </button>
 
         {/* Image Container */}
-        <div className="relative overflow-hidden rounded-lg bg-black">
-          <div className="relative h-[70vh] w-full">
-            <Image
-              src={image.src}
-              alt={image.alt}
-              fill
-              sizes="100vw"
-              className="object-contain"
-            />
-          </div>
+        <div className="relative w-full h-auto bg-black rounded-lg overflow-hidden">
+          <img
+            src={image.src}
+            alt={image.alt}
+            className="w-full h-auto max-h-[70vh] object-contain"
+          />
         </div>
 
         {/* Image Title and Counter */}
-        <div className="mt-4 text-center text-white">
+        <div className="mt-4 text-white text-center">
           <h3 className="text-lg font-semibold">{image.title}</h3>
-          <p className="mt-2 text-sm text-gray-400">
+          <p className="text-sm text-gray-400 mt-2">
             {currentIndex + 1} of {images.length}
           </p>
         </div>
@@ -102,7 +97,7 @@ export default function DroneGalleryModal({
           <button
             onClick={onPrevious}
             disabled={currentIndex === 0}
-            className="text-white transition-colors hover:text-red-500 disabled:text-gray-600 disabled:hover:text-gray-600"
+            className="text-white hover:text-red-500 disabled:text-gray-600 disabled:hover:text-gray-600 transition-colors"
             aria-label="Previous image"
           >
             <svg
@@ -127,7 +122,7 @@ export default function DroneGalleryModal({
           <button
             onClick={onNext}
             disabled={currentIndex === images.length - 1}
-            className="text-white transition-colors hover:text-red-500 disabled:text-gray-600 disabled:hover:text-gray-600"
+            className="text-white hover:text-red-500 disabled:text-gray-600 disabled:hover:text-gray-600 transition-colors"
             aria-label="Next image"
           >
             <svg

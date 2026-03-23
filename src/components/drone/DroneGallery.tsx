@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useState } from 'react';
 import { droneImages } from '@/lib/drone-images';
 import DroneGalleryModal from './DroneGalleryModal';
@@ -20,13 +19,13 @@ export default function DroneGallery({ onNavigateToForm }: DroneGalleryProps) {
   };
 
   const handleNext = () => {
-    setCurrentImageIndex(prev =>
+    setCurrentImageIndex((prev) =>
       prev < droneImages.length - 1 ? prev + 1 : prev
     );
   };
 
   const handlePrevious = () => {
-    setCurrentImageIndex(prev => (prev > 0 ? prev - 1 : prev));
+    setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : prev));
   };
 
   return (
@@ -37,8 +36,7 @@ export default function DroneGallery({ onNavigateToForm }: DroneGalleryProps) {
             Professional Drone Work
           </h2>
           <p className="text-lg text-gray-600">
-            Explore our portfolio of aerial photography and videography
-            projects. Click any image to view in detail.
+            Explore our portfolio of aerial photography and videography projects. Click any image to view in detail.
           </p>
         </div>
 
@@ -47,21 +45,19 @@ export default function DroneGallery({ onNavigateToForm }: DroneGalleryProps) {
           {droneImages.map((image, index) => (
             <div
               key={image.id}
-              className="group relative cursor-pointer overflow-hidden rounded-lg border border-slate-700 bg-slate-800 transition-colors hover:border-red-600"
+              className="group relative overflow-hidden rounded-lg border border-slate-700 bg-slate-800 cursor-pointer hover:border-red-600 transition-colors"
               onClick={() => handleImageClick(index)}
             >
-              <div className="relative aspect-square overflow-hidden bg-slate-700">
-                <Image
+              <div className="relative aspect-square bg-slate-700 overflow-hidden">
+                <img
                   src={image.src}
                   alt={image.alt}
-                  fill
-                  sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 {/* Overlay on hover */}
-                <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-300 group-hover:bg-black/40">
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center">
                   <svg
-                    className="h-12 w-12 text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                    className="h-12 w-12 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -87,7 +83,7 @@ export default function DroneGallery({ onNavigateToForm }: DroneGalleryProps) {
         <div className="mt-12 flex justify-center">
           <Button
             onClick={onNavigateToForm}
-            className="bg-red-600 px-8 py-3 text-lg hover:bg-red-700"
+            className="bg-red-600 hover:bg-red-700 px-8 py-3 text-lg"
           >
             Ready to Get Your Drone Quote?
           </Button>
