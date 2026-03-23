@@ -14,24 +14,18 @@ export async function POST(request: NextRequest) {
     const emailHtml = generateDroneQuoteEmail(validatedData);
 
     // Send email notification (using existing email service)
-    await sendQuoteRequestNotification(
-      {
-        id: `drone-${Date.now()}`,
-        name: validatedData.name,
-        email: validatedData.email,
-        phone: validatedData.phone,
-        serviceType: 'Drone Services',
-        projectDescription: validatedData.propertyAddress,
-        location: validatedData.propertyAddress,
-        timeline: validatedData.timeline,
-        budget: validatedData.budget,
-        createdAt: new Date(),
-      },
-      {
-        html: emailHtml,
-        replyTo: validatedData.email,
-      }
-    );
+    await sendQuoteRequestNotification({
+      id: `drone-${Date.now()}`,
+      name: validatedData.name,
+      email: validatedData.email,
+      phone: validatedData.phone,
+      serviceType: 'Drone Services',
+      projectDescription: validatedData.propertyAddress,
+      location: validatedData.propertyAddress,
+      timeline: validatedData.timeline,
+      budget: validatedData.budget,
+      createdAt: new Date(),
+    });
 
     return NextResponse.json(
       { success: true, message: 'Quote request received' },
