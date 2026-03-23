@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { customOrderSchema } from '@/lib/validations/custom-order';
-import { generateCustomOrderEmail } from '@/lib/email-templates';
 import { sendQuoteRequestNotification } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
@@ -10,8 +9,6 @@ export async function POST(request: NextRequest) {
     // Validate the request body
     const validatedData = customOrderSchema.parse(body);
 
-    // Generate email content
-    const emailHtml = generateCustomOrderEmail(validatedData);
 
     // Send email notification (using existing email service)
     await sendQuoteRequestNotification({

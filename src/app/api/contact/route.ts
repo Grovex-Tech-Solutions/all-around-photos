@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { contactSchema } from '@/lib/validations/contact';
-import { generateContactEmail } from '@/lib/email-templates';
 import { sendQuoteRequestNotification } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
@@ -10,8 +9,6 @@ export async function POST(request: NextRequest) {
     // Validate the request body
     const validatedData = contactSchema.parse(body);
 
-    // Generate email content
-    const emailHtml = generateContactEmail(validatedData);
 
     // Send email notification
     await sendQuoteRequestNotification({

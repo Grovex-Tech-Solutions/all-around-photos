@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { droneQuoteSchema } from '@/lib/validations/drone-quote';
-import { generateDroneQuoteEmail } from '@/lib/email-templates';
 import { sendQuoteRequestNotification } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
@@ -9,9 +8,6 @@ export async function POST(request: NextRequest) {
 
     // Validate the request body
     const validatedData = droneQuoteSchema.parse(body);
-
-    // Generate email content
-    const emailHtml = generateDroneQuoteEmail(validatedData);
 
     // Send email notification (using existing email service)
     await sendQuoteRequestNotification({
