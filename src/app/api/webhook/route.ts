@@ -1,12 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import {
+  sendOrderConfirmationEmail,
+  sendOwnerOrderNotificationEmail,
+} from '@/lib/email';
 
 const STRIPE_API_VERSION: Stripe.LatestApiVersion = '2026-02-25.clover';
+
+async function handleCompletedCheckout(
+  stripe: Stripe,
+  session: Stripe.Checkout.Session
+): Promise<void> {
+  const customerEmail =
+    session.customer_details?.email || session.customer_email;
+
+  if (!customerEmail) {
+    console.warn(
+      '[Webhook] Checkout completed without customer email:',
+      session.id
+    );
+    return;
+  }
+
+  const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
+    limit: 100,
+  });
+
+  const order = {
+    sessionId: session.id,
+    customerEmail,
+    customerName: session.customer_details?.name,
+    amountTotal: session.amount_total,
+    currency: session.currency,
+    items: lineItems.data.map(item => ({
+      description: item.description || 'Stripe line item',
+      quantity: item.quantity || 1,
+      amountTotal: item.amount_total,
+    })),
+  };
+
+  try {
+    await Promise.all([
+      sendOrderConfirmationEmail(order),
+      sendOwnerOrderNotificationEmail(order),
+    ]);
+  } catch (emailError) {
+    console.error('[Webhook] Email notification failed:', emailError);
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
     const key = process.env.STRIPE_SECRET_KEY;
-    if (!key) {
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!key || !webhookSecret) {
       return NextResponse.json(
         { error: 'Webhook service not configured' },
         { status: 500 }
@@ -27,16 +75,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const event = stripe.webhooks.constructEvent(
-      body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET || ''
-    );
+    const event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
 
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log('[Webhook] Checkout session completed:', session.id);
+        await handleCompletedCheckout(stripe, session);
         break;
       }
 
