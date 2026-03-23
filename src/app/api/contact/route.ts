@@ -14,22 +14,16 @@ export async function POST(request: NextRequest) {
     const emailHtml = generateContactEmail(validatedData);
 
     // Send email notification
-    await sendQuoteRequestNotification(
-      {
-        id: `contact-${Date.now()}`,
-        name: validatedData.name,
-        email: validatedData.email,
-        serviceType: 'Contact Form',
-        projectDescription: validatedData.message,
-        location: 'N/A',
-        timeline: 'Not specified',
-        createdAt: new Date(),
-      },
-      {
-        html: emailHtml,
-        replyTo: validatedData.email,
-      }
-    );
+    await sendQuoteRequestNotification({
+      id: `contact-${Date.now()}`,
+      name: validatedData.name,
+      email: validatedData.email,
+      serviceType: 'Contact Form',
+      projectDescription: validatedData.message,
+      location: 'N/A',
+      timeline: 'Not specified',
+      createdAt: new Date(),
+    });
 
     return NextResponse.json(
       { success: true, message: 'Message received' },

@@ -4,7 +4,7 @@ A modern, responsive website for All Around Photos LLC - a professional drone ph
 
 ## Tech Stack
 
-- **Framework**: Next.js 16 with App Router
+- **Framework**: Next.js 15 with App Router
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS with custom design system
 - **Fonts**: Inter (primary), Playfair Display (accent)
@@ -15,39 +15,23 @@ A modern, responsive website for All Around Photos LLC - a professional drone ph
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 18+ 
 - npm
 
 ### Installation
 
 1. Clone the repository
 2. Install dependencies:
-
    ```bash
    npm install
    ```
 
-3. Configure environment variables:
-
-   ```bash
-   cp .env.example .env.local
-   ```
-
-   Required for production features:
-   - `STRIPE_SECRET_KEY`
-   - `STRIPE_WEBHOOK_SECRET`
-   - `RESEND_API_KEY`
-   - `EMAIL_FROM`
-   - `PHOTOGRAPHER_EMAIL`
-   - `NEXT_PUBLIC_SITE_URL`
-
-4. Run the development server:
-
+3. Run the development server:
    ```bash
    npm run dev
    ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ## Available Scripts
 
@@ -89,21 +73,18 @@ src/
 ## Design System
 
 ### Colors
-
 - **Primary**: Deep blue (#1e40af) - Professional, trustworthy
-- **Secondary**: Sky blue (#0ea5e9) - Modern, aerial theme
+- **Secondary**: Sky blue (#0ea5e9) - Modern, aerial theme  
 - **Accent**: Orange (#f97316) - Call-to-action, energy
 - **Neutral**: Gray scale for text and backgrounds
 - **Success**: Green (#10b981)
 - **Warning**: Amber (#f59e0b)
 
 ### Typography
-
 - **Primary Font**: Inter - Clean, modern sans-serif
 - **Accent Font**: Playfair Display - Elegant serif for headings
 
 ### Responsive Breakpoints
-
 - **Mobile**: 320px+
 - **Tablet**: 768px+
 - **Desktop**: 1024px+

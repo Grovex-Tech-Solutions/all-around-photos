@@ -14,24 +14,18 @@ export async function POST(request: NextRequest) {
     const emailHtml = generateCustomOrderEmail(validatedData);
 
     // Send email notification (using existing email service)
-    await sendQuoteRequestNotification(
-      {
-        id: `custom-${Date.now()}`,
-        name: validatedData.name,
-        email: validatedData.email,
-        phone: validatedData.phone,
-        serviceType: 'Custom Order',
-        projectDescription: validatedData.description,
-        location: 'N/A',
-        timeline: validatedData.timeline,
-        budget: validatedData.budget,
-        createdAt: new Date(),
-      },
-      {
-        html: emailHtml,
-        replyTo: validatedData.email,
-      }
-    );
+    await sendQuoteRequestNotification({
+      id: `custom-${Date.now()}`,
+      name: validatedData.name,
+      email: validatedData.email,
+      phone: validatedData.phone,
+      serviceType: 'Custom Order',
+      projectDescription: validatedData.description,
+      location: 'N/A',
+      timeline: validatedData.timeline,
+      budget: validatedData.budget,
+      createdAt: new Date(),
+    });
 
     return NextResponse.json(
       { success: true, message: 'Order request received' },
