@@ -176,14 +176,7 @@ Please respond to this quote request within 24 hours.
   return { subject, body, html };
 }
 
-function generateQuoteResponseEmail(
-  clientName: string,
-  quoteDetails: {
-    serviceType: string;
-    quotedAmount?: number;
-    message: string;
-  }
-) {
+function generateQuoteResponseEmail(clientName: string, quoteDetails: any) {
   const subject = `Quote Response: ${quoteDetails.serviceType} Photography`;
   
   const body = `

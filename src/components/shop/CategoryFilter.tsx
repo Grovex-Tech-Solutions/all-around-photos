@@ -32,7 +32,7 @@ export function CategoryFilter({
               ? 'bg-red-600 text-white hover:bg-red-700'
               : 'border border-slate-600 bg-slate-800 text-slate-300 hover:border-red-600 hover:text-white'
           }`}
-          variant={selectedCategory === category ? 'primary' : 'outline'}
+          variant={selectedCategory === category ? 'default' : 'outline'}
         >
           {category === 'all' ? 'All Products' : CATEGORY_LABELS[category]}
         </Button>

@@ -3,8 +3,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { Product, CartItem } from '@/lib/products';
 
-export type { CartItem } from '@/lib/products';
-
 interface CartContextValue {
   items: CartItem[];
   addItem: (product: Product, quantity?: number, size?: string, color?: string) => void;
@@ -23,25 +21,29 @@ function getCartItemKey(productId: string, size?: string, color?: string): strin
   return `${productId}-${size ?? 'none'}-${color ?? 'none'}`;
 }
 
-function loadStoredCart(): CartItem[] {
-  if (typeof window === 'undefined') {
-    return [];
-  }
-
-  try {
-    const stored = window.localStorage.getItem(CART_STORAGE_KEY);
-    return stored ? (JSON.parse(stored) as CartItem[]) : [];
-  } catch {
-    return [];
-  }
-}
-
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(loadStoredCart);
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
+  // Load cart from localStorage on mount
   useEffect(() => {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
-  }, [items]);
+    try {
+      const stored = localStorage.getItem(CART_STORAGE_KEY);
+      if (stored) {
+        setItems(JSON.parse(stored));
+      }
+    } catch {
+      // Ignore parse errors
+    }
+    setIsLoaded(true);
+  }, []);
+
+  // Save cart to localStorage on change
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+    }
+  }, [items, isLoaded]);
 
   const addItem = useCallback((product: Product, quantity = 1, size?: string, color?: string) => {
     setItems((prev) => {

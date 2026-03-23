@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
-const STRIPE_API_VERSION: Stripe.LatestApiVersion = '2026-02-25.clover';
+// Lazy initialize Stripe to avoid build-time errors
+function getStripeClient() {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    throw new Error('STRIPE_SECRET_KEY not configured');
+  }
+  return new Stripe(key, {
+    apiVersion: '2024-11-20',
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     const stripe = new Stripe(key, {
-      apiVersion: STRIPE_API_VERSION,
+      apiVersion: '2024-11-20',
     });
 
     const body = await request.text();
@@ -33,22 +42,36 @@ export async function POST(request: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET || ''
     );
 
+    // Handle different event types
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log('[Webhook] Checkout session completed:', session.id);
+        
+        // TODO: Create order record in database
+        // TODO: Decrement inventory for purchased items
+        // TODO: Send confirmation email to customer
+        
         break;
       }
 
       case 'charge.refunded': {
         const charge = event.data.object as Stripe.Charge;
         console.log('[Webhook] Charge refunded:', charge.id);
+        
+        // TODO: Update order status to refunded
+        // TODO: Restore inventory
+        // TODO: Send refund notification email
+        
         break;
       }
 
       case 'charge.dispute.created': {
         const dispute = event.data.object as Stripe.Dispute;
         console.log('[Webhook] Dispute created:', dispute.id);
+        
+        // TODO: Notify admin of dispute
+        
         break;
       }
 

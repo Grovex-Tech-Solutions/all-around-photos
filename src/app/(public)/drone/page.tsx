@@ -3,6 +3,7 @@
 import { useRef } from 'react';
 import { DroneQuoteForm } from '@/components/forms/DroneQuoteForm';
 import DroneGallery from '@/components/drone/DroneGallery';
+import { Metadata } from 'next';
 
 // Note: Metadata export will cause hydration issues with 'use client' directive
 // Consider moving this to a layout or separate metadata configuration
