@@ -1,36 +1,65 @@
 'use client';
 
-import { forwardRef } from 'react';
+import React, { cloneElement, forwardRef, isValidElement } from 'react';
 import { cn } from '@/lib/utils';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'accent' | 'outline' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
+  asChild?: boolean;
   children: React.ReactNode;
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', loading = false, disabled, children, ...props }, ref) => {
-    const baseStyles = 'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
-    
+  (
+    {
+      className,
+      variant = 'primary',
+      size = 'md',
+      loading = false,
+      disabled,
+      asChild = false,
+      children,
+      ...props
+    },
+    ref
+  ) => {
+    const baseStyles =
+      'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
+
     const variants = {
       primary: 'bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500',
       secondary: 'bg-sky-500 text-white hover:bg-sky-600 focus-visible:ring-sky-500',
       accent: 'bg-orange-500 text-white hover:bg-orange-600 focus-visible:ring-orange-500',
-      outline: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus-visible:ring-gray-500',
-      ghost: 'text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-500'
+      outline:
+        'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus-visible:ring-gray-500',
+      ghost: 'text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-500',
     };
 
     const sizes = {
       sm: 'h-8 px-3 text-sm',
       md: 'h-10 px-4 text-sm',
-      lg: 'h-12 px-6 text-base'
+      lg: 'h-12 px-6 text-base',
     };
+
+    const buttonClassName = cn(baseStyles, variants[variant], sizes[size], className);
+
+    if (asChild) {
+      if (!isValidElement(children)) {
+        return null;
+      }
+
+      const child = children as React.ReactElement<{ className?: string }>;
+
+      return cloneElement(child, {
+        className: cn(buttonClassName, child.props.className),
+      });
+    }
 
     return (
       <button
-        className={cn(baseStyles, variants[variant], sizes[size], className)}
+        className={buttonClassName}
         disabled={disabled || loading}
         ref={ref}
         {...props}

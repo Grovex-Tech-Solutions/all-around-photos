@@ -3,21 +3,15 @@ import Stripe from 'stripe';
 import { z } from 'zod';
 import { products } from '@/lib/products';
 
-// Lazy initialize Stripe to avoid build-time errors
-function getStripeClient() {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) {
-    throw new Error('STRIPE_SECRET_KEY not configured');
-  }
-  return new Stripe(key, {
-    apiVersion: '2024-11-20',
-  });
-}
+const STRIPE_API_VERSION: Stripe.LatestApiVersion = '2026-02-25.clover';
 
-// Rate limiting map: tracks checkout attempts per IP
 const checkoutRateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
-function checkCheckoutRateLimit(ip: string | null, limit = 3, windowMs = 5 * 60 * 1000): boolean {
+function checkCheckoutRateLimit(
+  ip: string | null,
+  limit = 3,
+  windowMs = 5 * 60 * 1000
+): boolean {
   const key = ip || 'unknown';
   const now = Date.now();
   const entry = checkoutRateLimitMap.get(key);
@@ -35,7 +29,15 @@ function checkCheckoutRateLimit(ip: string | null, limit = 3, windowMs = 5 * 60 
   return true;
 }
 
-// Define cart item and request schemas
+function getRequestIp(request: NextRequest): string | null {
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  if (forwardedFor) {
+    return forwardedFor.split(',')[0]?.trim() ?? null;
+  }
+
+  return request.headers.get('x-real-ip');
+}
+
 const checkoutItemSchema = z.object({
   id: z.string(),
   quantity: z.number().int().positive(),
@@ -50,7 +52,6 @@ const checkoutRequestSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    // Initialize Stripe client
     const key = process.env.STRIPE_SECRET_KEY;
     if (!key) {
       console.error('STRIPE_SECRET_KEY not configured');
@@ -61,11 +62,10 @@ export async function POST(request: NextRequest) {
     }
 
     const stripe = new Stripe(key, {
-      apiVersion: '2024-11-20',
+      apiVersion: STRIPE_API_VERSION,
     });
 
-    // Rate limiting: max 3 checkout attempts per IP per 5 minutes
-    const ip = request.ip || request.headers.get('x-forwarded-for');
+    const ip = getRequestIp(request);
     if (!checkCheckoutRateLimit(ip)) {
       return NextResponse.json(
         { error: 'Too many checkout attempts. Please wait before trying again.' },
@@ -73,7 +73,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // CSRF token validation
     const csrfToken = request.headers.get('x-csrf-token');
     const cookieStore = request.cookies.get('csrf-token')?.value;
     if (!csrfToken || !cookieStore || csrfToken !== cookieStore) {
@@ -83,15 +82,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse and validate request body
     const body = await request.json();
     const validatedRequest = checkoutRequestSchema.parse(body);
 
-    // Validate cart items against product data
-    const validatedItems: Array<{ product: (typeof products)[0]; quantity: number; size: string; color: string }> = [];
+    const validatedItems: Array<{
+      product: (typeof products)[0];
+      quantity: number;
+      size: string;
+      color: string;
+    }> = [];
 
     for (const item of validatedRequest.items) {
-      const product = products.find(p => p.id === item.id);
+      const product = products.find((p) => p.id === item.id);
 
       if (!product) {
         return NextResponse.json(
@@ -102,7 +104,10 @@ export async function POST(request: NextRequest) {
 
       if (item.version !== product.version) {
         return NextResponse.json(
-          { error: `Product "${product.name}" has been updated. Please review your cart.`, stale: true },
+          {
+            error: `Product "${product.name}" has been updated. Please review your cart.`,
+            stale: true,
+          },
           { status: 409 }
         );
       }
@@ -129,12 +134,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const origin =
+      request.headers.get('origin') ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      'http://localhost:3000';
 
-    // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
-      line_items: validatedItems.map(item => ({
+      line_items: validatedItems.map((item) => ({
         price_data: {
           currency: 'usd',
           product_data: {
@@ -142,7 +149,7 @@ export async function POST(request: NextRequest) {
             description: [item.size, item.color].filter(Boolean).join(' / ') || undefined,
             images: [`${origin}${item.product.image}`],
           },
-          unit_amount: item.product.price, // authoritative price from server
+          unit_amount: item.product.price,
         },
         quantity: item.quantity,
       })),
@@ -156,11 +163,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid cart data.' }, { status: 400 });
     }
 
-    // Sanitize sensitive data before logging
     const message = err instanceof Error ? err.message : 'Unknown error';
-    const hasSensitiveData = 
-      message.includes('api_key') || 
-      message.includes('token') || 
+    const hasSensitiveData =
+      message.includes('api_key') ||
+      message.includes('token') ||
       message.includes('secret');
     const sanitizedMessage = hasSensitiveData ? 'Payment processing error' : message;
 

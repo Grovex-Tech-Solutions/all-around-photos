@@ -18,31 +18,33 @@ export default function ProductModal({
   onClose,
   onAddToCart,
 }: ProductModalProps) {
-  const [selectedSize, setSelectedSize] = useState(product.sizes[0] || '');
-  const [selectedColor, setSelectedColor] = useState(product.colors[0] || '');
+  const availableSizes = product.sizes ?? [];
+  const availableColors = product.colors ?? [];
+
+  const [selectedSize, setSelectedSize] = useState(availableSizes[0] || '');
+  const [selectedColor, setSelectedColor] = useState(availableColors[0] || '');
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState('');
 
   const triggerRef = useRef<HTMLElement | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Focus management: save trigger, focus close, trap tab, restore on close
   useEffect(() => {
     triggerRef.current = document.activeElement as HTMLElement;
 
-    const closeButton = modalRef.current?.querySelector('[aria-label="Close product details"]') as HTMLButtonElement;
+    const closeButton = modalRef.current?.querySelector(
+      '[aria-label="Close product details"]'
+    ) as HTMLButtonElement;
     if (closeButton) {
       closeButton.focus();
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Escape key closes modal
       if (e.key === 'Escape') {
         onClose();
         return;
       }
 
-      // Tab/Shift+Tab focus trap
       if (e.key === 'Tab') {
         const focusable = Array.from(
           modalRef.current?.querySelectorAll(
@@ -68,7 +70,6 @@ export default function ProductModal({
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      // Restore focus to trigger element
       if (triggerRef.current?.focus) {
         triggerRef.current.focus();
       }
@@ -92,16 +93,17 @@ export default function ProductModal({
     onAddToCart(selectedSize, selectedColor, quantity);
   }, [selectedSize, selectedColor, quantity, onAddToCart]);
 
+  const sizeOptions = availableSizes.map((size) => ({ value: size, label: size }));
+  const colorOptions = availableColors.map((color) => ({ value: color, label: color }));
+
   return (
     <>
-      {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-40"
+        className="fixed inset-0 z-40 bg-black bg-opacity-50"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Modal */}
       <div
         ref={modalRef}
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -109,26 +111,23 @@ export default function ProductModal({
         aria-modal="true"
         aria-labelledby="modal-title"
       >
-        <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          {/* Close button */}
-          <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
+        <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white shadow-xl">
+          <div className="sticky top-0 flex items-center justify-between border-b bg-white p-4">
             <h2 id="modal-title" className="text-2xl font-bold text-gray-900">
               {product.name}
             </h2>
             <button
               onClick={onClose}
               aria-label="Close product details"
-              className="text-gray-500 hover:text-gray-700 text-2xl font-bold leading-none"
+              className="text-2xl font-bold leading-none text-gray-500 hover:text-gray-700"
             >
               ✕
             </button>
           </div>
 
-          {/* Content */}
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Image */}
-              <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-100">
                 <Image
                   src={product.image}
                   alt={product.name}
@@ -138,67 +137,52 @@ export default function ProductModal({
                 />
               </div>
 
-              {/* Details */}
               <div className="flex flex-col">
-                <p className="text-gray-600 text-lg mb-4">{product.description}</p>
+                <p className="mb-4 text-lg text-gray-600">{product.description}</p>
 
-                {/* Price */}
                 <div className="mb-6">
-                  <p className="text-gray-600 text-sm">Price</p>
+                  <p className="text-sm text-gray-600">Price</p>
                   <p className="text-4xl font-bold text-accent">
                     {formatCurrency(product.price / 100)}
                   </p>
                 </div>
 
-                {/* Size selection */}
                 <div className="mb-4">
-                  <label htmlFor="size-select" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="size-select" className="mb-2 block text-sm font-medium text-gray-700">
                     Size <span className="text-red-500">*</span>
                   </label>
                   <Select
                     id="size-select"
                     value={selectedSize}
-                    onChange={(e) => {
-                      setSelectedSize(e.target.value);
+                    options={sizeOptions}
+                    placeholder="Choose a size"
+                    onChange={(value) => {
+                      setSelectedSize(value);
                       setError('');
                     }}
                     aria-describedby={error ? 'error-msg' : undefined}
-                  >
-                    <option value="">Choose a size</option>
-                    {product.sizes.map((size) => (
-                      <option key={size} value={size}>
-                        {size}
-                      </option>
-                    ))}
-                  </Select>
+                  />
                 </div>
 
-                {/* Color selection */}
                 <div className="mb-4">
-                  <label htmlFor="color-select" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="color-select" className="mb-2 block text-sm font-medium text-gray-700">
                     Color <span className="text-red-500">*</span>
                   </label>
                   <Select
                     id="color-select"
                     value={selectedColor}
-                    onChange={(e) => {
-                      setSelectedColor(e.target.value);
+                    options={colorOptions}
+                    placeholder="Choose a color"
+                    onChange={(value) => {
+                      setSelectedColor(value);
                       setError('');
                     }}
                     aria-describedby={error ? 'error-msg' : undefined}
-                  >
-                    <option value="">Choose a color</option>
-                    {product.colors.map((color) => (
-                      <option key={color} value={color}>
-                        {color}
-                      </option>
-                    ))}
-                  </Select>
+                  />
                 </div>
 
-                {/* Quantity selection */}
                 <div className="mb-6">
-                  <label htmlFor="quantity-input" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="quantity-input" className="mb-2 block text-sm font-medium text-gray-700">
                     Quantity
                   </label>
                   <input
@@ -208,29 +192,27 @@ export default function ProductModal({
                     max="99"
                     value={quantity}
                     onChange={(e) => {
-                      setQuantity(Math.max(1, parseInt(e.target.value) || 1));
+                      setQuantity(Math.max(1, parseInt(e.target.value, 10) || 1));
                       setError('');
                     }}
-                    className="w-20 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-accent focus:border-accent"
+                    className="w-20 rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-accent focus:outline-none focus:ring-accent"
                   />
                 </div>
 
-                {/* Error message */}
                 {error && (
                   <div
                     id="error-msg"
                     role="alert"
                     aria-live="polite"
-                    className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm"
+                    className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
                   >
                     {error}
                   </div>
                 )}
 
-                {/* Add to cart button */}
                 <Button
                   onClick={handleAddToCart}
-                  className="w-full mt-auto"
+                  className="mt-auto w-full"
                   aria-label={`Add ${product.name} to cart`}
                 >
                   Add to Cart
