@@ -53,4 +53,3 @@ next-env.d.ts
 
 # local media staging (Cloudflare Workers assets are limited to 25 MiB per file)
 public/staged-assets/
-public/drone/all-around-flythrough.mp4

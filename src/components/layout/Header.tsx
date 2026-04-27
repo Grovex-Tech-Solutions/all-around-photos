@@ -25,7 +25,7 @@ export function Header() {
             href="/"
             className="text-lg font-black uppercase tracking-[0.15em] text-white transition-colors hover:text-accent"
           >
-            All Around
+            All Around <span className="text-red-500">Photos</span>
           </Link>
 
           {/* Desktop Navigation */}
