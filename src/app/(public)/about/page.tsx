@@ -19,10 +19,10 @@ export default function AboutPage() {
             <section className="border-l-4 border-red-600 pl-8">
               <h2 className="text-3xl font-bold text-white mb-4">Our Story</h2>
               <p className="text-lg text-gray-300 leading-relaxed mb-4">
-                All Around Photos LLC started with a vision to bring creativity and quality to everything we make. What began as a passion for custom design has evolved into a fully-fledged apparel and goods studio, combined with professional drone services for real estate.
+                All Around Photos LLC is built around two lanes that work well together: direct-to-client custom product work and dependable aerial media coverage. The same mindset drives both sides of the business, clear communication, clean execution, and deliverables that are ready to use.
               </p>
               <p className="text-lg text-gray-300 leading-relaxed">
-                We believe that every piece we create should tell a story—whether it's a custom hoodie with a unique design, a personalized set of coasters, or stunning aerial photography that showcases properties from a whole new perspective.
+                On the product side, that means custom apparel and goods with a tight, collaborative order process. On the drone side, it means FAA-certified imaging for listings, inspections, building coverage, and marketing content.
               </p>
             </section>
 
@@ -30,7 +30,7 @@ export default function AboutPage() {
             <section className="border-l-4 border-red-600 pl-8">
               <h2 className="text-3xl font-bold text-white mb-4">Our Mission</h2>
               <p className="text-lg text-gray-300 leading-relaxed">
-                To create high-quality, custom apparel and goods that celebrate individuality, while providing professional drone photography services that exceed expectations. We're committed to precision, creativity, and customer satisfaction in everything we do.
+                Build work that feels intentional, lands on time, and gives clients a finished product they can use immediately, whether that&apos;s a custom run of apparel or aerial visuals for a property and inspection workflow.
               </p>
             </section>
 
@@ -41,25 +41,25 @@ export default function AboutPage() {
                 <div className="bg-slate-900 border border-gray-700 p-6 rounded-sm">
                   <h3 className="text-xl font-bold text-red-600 mb-3">Custom Apparel</h3>
                   <p className="text-gray-300">
-                    Premium hoodies, t-shirts, and more with custom Cricut designs. We craft pieces that fit your style and vision.
+                    Hoodies, tees, coasters, and other custom goods produced in small batches with a direct quote-first process.
                   </p>
                 </div>
                 <div className="bg-slate-900 border border-gray-700 p-6 rounded-sm">
                   <h3 className="text-xl font-bold text-red-600 mb-3">Custom Goods</h3>
                   <p className="text-gray-300">
-                    Personalized coasters, merchandise, and custom items. Every piece is made with attention to detail.
+                    Personalized pieces for gifts, events, merch tables, and branded runs that need a cleaner look than off-the-shelf templates.
                   </p>
                 </div>
                 <div className="bg-slate-900 border border-gray-700 p-6 rounded-sm">
                   <h3 className="text-xl font-bold text-red-600 mb-3">Drone Photography</h3>
                   <p className="text-gray-300">
-                    Professional aerial photography for real estate agents and businesses. Stunning perspectives from the sky.
+                    Real estate, inspection, and site-documentation coverage with still packages, directional imaging, and add-on services.
                   </p>
                 </div>
                 <div className="bg-slate-900 border border-gray-700 p-6 rounded-sm">
                   <h3 className="text-xl font-bold text-red-600 mb-3">Quality First</h3>
                   <p className="text-gray-300">
-                    Every product and service is delivered with precision, care, and a commitment to excellence.
+                    Every order is handled with clear scoping, realistic turnaround expectations, and deliverables that match the brief.
                   </p>
                 </div>
               </div>
@@ -70,12 +70,12 @@ export default function AboutPage() {
               <h2 className="text-3xl font-bold text-white mb-6">Why Choose Us</h2>
               <ul className="space-y-3">
                 {[
-                  'Custom designs crafted to your exact specifications',
-                  'Premium materials and professional-grade equipment',
-                  'Fast turnaround times without sacrificing quality',
-                  'Competitive pricing with transparent communication',
-                  'Professional aerial photography with certified operators',
-                  'Dedicated to bringing your vision to life',
+                  'Quote-first workflow with direct communication from intake to delivery',
+                  'FAA Part 107 certified and insured drone operations',
+                  'Clear service packages for still coverage plus inspection add-ons',
+                  'Flexible custom-order intake for one-off ideas and small-batch runs',
+                  'Fast, usable deliverables without overcomplicating the process',
+                  'Focused on practical results, not generic template work',
                 ].map((item, index) => (
                   <li key={index} className="flex items-start gap-4">
                     <span className="text-red-600 font-bold text-xl mt-1">✓</span>

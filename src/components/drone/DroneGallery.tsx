@@ -33,12 +33,11 @@ export default function DroneGallery({ onNavigateToForm }: DroneGalleryProps) {
     <>
       <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="mb-12">
-          <h2 className="mb-4 text-3xl font-bold text-gray-900">
-            Professional Drone Work
+          <h2 className="mb-4 text-3xl font-black uppercase tracking-[0.08em] text-white">
+            Recent Drone Work
           </h2>
-          <p className="text-lg text-gray-600">
-            Explore our portfolio of aerial photography and videography
-            projects. Click any image to view in detail.
+          <p className="max-w-3xl text-lg text-zinc-400">
+            Explore recent aerial photography and flyover coverage for listings, buildings, and site documentation. Select any frame to inspect it in detail.
           </p>
         </div>
 
@@ -61,7 +60,7 @@ export default function DroneGallery({ onNavigateToForm }: DroneGalleryProps) {
                 {/* Overlay on hover */}
                 <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-300 group-hover:bg-black/40">
                   <svg
-                    className="h-12 w-12 text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                      className="h-12 w-12 text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -77,7 +76,7 @@ export default function DroneGallery({ onNavigateToForm }: DroneGalleryProps) {
               </div>
               <div className="p-4">
                 <h3 className="font-semibold text-white">{image.title}</h3>
-                <p className="mt-1 text-sm text-gray-400">{image.alt}</p>
+                <p className="mt-1 text-sm text-zinc-400">{image.alt}</p>
               </div>
             </div>
           ))}

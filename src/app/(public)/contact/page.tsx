@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { ContactForm } from '@/components/forms/ContactForm';
+import { CONTACT_INFO } from '@/lib/constants';
 
 export const metadata: Metadata = {
   title: 'Contact Us | All Around Photos LLC',
@@ -25,8 +26,8 @@ export default function ContactPage() {
                     Phone
                   </h3>
                   <p className="text-gray-300">
-                    <a href="tel:(555) 123-4567" className="hover:text-white transition">
-                      (555) 123-4567
+                    <a href={`tel:${CONTACT_INFO.phone}`} className="hover:text-white transition">
+                      {CONTACT_INFO.phone}
                     </a>
                   </p>
                 </div>
@@ -36,19 +37,27 @@ export default function ContactPage() {
                     Email
                   </h3>
                   <p className="text-gray-300">
-                    <a href="mailto:info@allaroundphotos.com" className="hover:text-white transition">
-                      info@allaroundphotos.com
+                    <a href={`mailto:${CONTACT_INFO.email}`} className="hover:text-white transition">
+                      {CONTACT_INFO.email}
                     </a>
                   </p>
                 </div>
 
                 <div className="border-l-4 border-red-600 pl-4">
                   <h3 className="text-sm font-bold uppercase tracking-wide text-red-600 mb-1">
-                    Address
+                    Service Area
                   </h3>
                   <p className="text-gray-300">
-                    123 Main St<br />
-                    City, State 12345
+                    {CONTACT_INFO.address}
+                  </p>
+                </div>
+
+                <div className="border-l-4 border-red-600 pl-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wide text-red-600 mb-1">
+                    Best For
+                  </h3>
+                  <p className="text-gray-300">
+                    Custom orders, listing-ready drone coverage, building documentation, and fast follow-up questions.
                   </p>
                 </div>
               </div>

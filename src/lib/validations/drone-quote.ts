@@ -17,7 +17,7 @@ export const droneQuoteSchema = z.object({
   ).min(1, 'Select at least one service'),
   acreage: z.string().optional(),
   timeline: z.enum(['asap', '1-2-weeks', '1-month', 'flexible']),
-  budget: z.enum(['500-1000', '1000-2500', '2500-5000', '5000+']),
+  budget: z.enum(['175-250', '250-420', '420-750', '750+']),
   notes: z.string().optional(),
 });
 

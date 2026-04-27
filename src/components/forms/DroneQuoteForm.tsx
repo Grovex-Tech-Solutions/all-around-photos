@@ -18,13 +18,14 @@ export function DroneQuoteForm() {
     serviceType: ['photography'] as string[],
     acreage: '',
     timeline: 'asap',
-    budget: '500-1000',
+    budget: '175-250',
     notes: '',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [referenceId, setReferenceId] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -59,6 +60,7 @@ export function DroneQuoteForm() {
     setIsSubmitting(true);
     setError('');
     setSuccess(false);
+    setReferenceId('');
 
     try {
       // Validate data
@@ -75,7 +77,10 @@ export function DroneQuoteForm() {
         throw new Error(errorData.error || 'Failed to submit quote request');
       }
 
+      const result = await response.json();
+
       setSuccess(true);
+      setReferenceId(result.referenceId || '');
       setFormData({
         name: '',
         email: '',
@@ -86,7 +91,7 @@ export function DroneQuoteForm() {
         serviceType: ['photography'],
         acreage: '',
         timeline: 'asap',
-        budget: '500-1000',
+        budget: '175-250',
         notes: '',
       });
       setTimeout(() => setSuccess(false), 5000);
@@ -107,7 +112,7 @@ export function DroneQuoteForm() {
 
       {success && (
         <div className="rounded-lg bg-green-900 p-4 text-green-100">
-          Quote request submitted successfully! We'll contact you soon.
+          Quote request submitted successfully. Reference ID: <span className="font-bold">{referenceId}</span>
         </div>
       )}
 
@@ -226,7 +231,7 @@ export function DroneQuoteForm() {
                 onChange={handleChange}
                 className="h-4 w-4 rounded border-slate-600 bg-slate-700"
               />
-              <span className="capitalize">{service}</span>
+              <span className="capitalize">{service === 'video' ? 'flythrough video' : service}</span>
             </label>
           ))}
         </div>
@@ -276,10 +281,10 @@ export function DroneQuoteForm() {
           value={formData.budget}
           onChange={handleFieldChange('budget')}
           options={[
-            { value: '500-1000', label: '$500 - $1,000' },
-            { value: '1000-2500', label: '$1,000 - $2,500' },
-            { value: '2500-5000', label: '$2,500 - $5,000' },
-            { value: '5000+', label: '$5,000+' },
+            { value: '175-250', label: '$175 - $250' },
+            { value: '250-420', label: '$250 - $420' },
+            { value: '420-750', label: '$420 - $750' },
+            { value: '750+', label: '$750+' },
           ]}
           className="mt-2 bg-slate-700 text-white"
         />

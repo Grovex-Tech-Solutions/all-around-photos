@@ -5,6 +5,7 @@ import { sendQuoteRequestNotification } from '@/lib/email';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const referenceId = `CO-${Date.now()}`;
 
     // Validate the request body
     const validatedData = customOrderSchema.parse(body);
@@ -12,12 +13,18 @@ export async function POST(request: NextRequest) {
 
     // Send email notification (using existing email service)
     await sendQuoteRequestNotification({
-      id: `custom-${Date.now()}`,
+      id: referenceId,
       name: validatedData.name,
       email: validatedData.email,
       phone: validatedData.phone,
       serviceType: 'Custom Order',
-      projectDescription: validatedData.description,
+      projectDescription: [
+        `Item type: ${validatedData.itemType}`,
+        `Quantity: ${validatedData.quantity}`,
+        validatedData.referenceUrl ? `Reference URL: ${validatedData.referenceUrl}` : null,
+        '',
+        validatedData.description,
+      ].filter(Boolean).join('\n'),
       location: 'N/A',
       timeline: validatedData.timeline,
       budget: validatedData.budget,
@@ -25,7 +32,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { success: true, message: 'Order request received' },
+      { success: true, message: 'Order request received', referenceId },
       { status: 200 }
     );
   } catch (error) {

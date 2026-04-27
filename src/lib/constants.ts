@@ -2,15 +2,15 @@
 
 export const SITE_CONFIG = {
   name: 'All Around Photos LLC',
-  description: 'Custom apparel, Cricut designs, and drone photography services',
+  description: 'Custom apparel, branded goods, and FAA-certified drone imaging for listings and inspections',
   url: 'https://allaroundphotos.com',
   ogImage: '/og-image.svg',
 } as const;
 
 export const CONTACT_INFO = {
-  phone: '(555) 123-4567',
-  email: 'info@allaroundphotos.com',
-  address: '123 Main St, City, State 12345',
+  phone: '725-219-3747',
+  email: 'j.brattina@allaroundphotosllc.net',
+  address: 'Serving Western Pennsylvania and surrounding areas',
 } as const;
 
 export const PRODUCT_CATEGORIES = {

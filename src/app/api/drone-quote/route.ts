@@ -5,18 +5,24 @@ import { sendQuoteRequestNotification } from '@/lib/email';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const referenceId = `DQ-${Date.now()}`;
 
     // Validate the request body
     const validatedData = droneQuoteSchema.parse(body);
 
     // Send email notification (using existing email service)
     await sendQuoteRequestNotification({
-      id: `drone-${Date.now()}`,
+      id: referenceId,
       name: validatedData.name,
       email: validatedData.email,
       phone: validatedData.phone,
       serviceType: 'Drone Services',
-      projectDescription: validatedData.propertyAddress,
+      projectDescription: [
+        `Property type: ${validatedData.propertyType}`,
+        `Services: ${validatedData.serviceType.join(', ')}`,
+        validatedData.acreage ? `Acreage: ${validatedData.acreage}` : null,
+        validatedData.notes ? `Notes: ${validatedData.notes}` : null,
+      ].filter(Boolean).join('\n'),
       location: validatedData.propertyAddress,
       timeline: validatedData.timeline,
       budget: validatedData.budget,
@@ -24,7 +30,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { success: true, message: 'Quote request received' },
+      { success: true, message: 'Quote request received', referenceId },
       { status: 200 }
     );
   } catch (error) {

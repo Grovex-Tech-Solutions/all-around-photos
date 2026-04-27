@@ -12,8 +12,10 @@ export function CustomOrderForm() {
     name: '',
     email: '',
     phone: '',
+    itemType: 'hoodie',
+    quantity: '1',
     description: '',
-    style: 'streetwear',
+    referenceUrl: '',
     budget: '100-250',
     timeline: '1-2-weeks',
   });
@@ -21,6 +23,7 @@ export function CustomOrderForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [referenceId, setReferenceId] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -45,6 +48,7 @@ export function CustomOrderForm() {
     setIsSubmitting(true);
     setError('');
     setSuccess(false);
+    setReferenceId('');
 
     try {
       // Validate data
@@ -61,13 +65,18 @@ export function CustomOrderForm() {
         throw new Error(errorData.error || 'Failed to submit order');
       }
 
+      const result = await response.json();
+
       setSuccess(true);
+      setReferenceId(result.referenceId || '');
       setFormData({
         name: '',
         email: '',
         phone: '',
+        itemType: 'hoodie',
+        quantity: '1',
         description: '',
-        style: 'streetwear',
+        referenceUrl: '',
         budget: '100-250',
         timeline: '1-2-weeks',
       });
@@ -89,7 +98,7 @@ export function CustomOrderForm() {
 
       {success && (
         <div className="rounded-lg bg-green-900 p-4 text-green-100">
-          Order request submitted successfully! We'll contact you soon.
+          Order request submitted successfully. Reference ID: <span className="font-bold">{referenceId}</span>
         </div>
       )}
 
@@ -141,22 +150,39 @@ export function CustomOrderForm() {
         />
       </div>
 
-      {/* Style */}
+      {/* Item Type */}
       <div>
         <label className="block text-sm font-semibold text-white">
-          Design Style *
+          Item Type *
         </label>
         <Select
-          name="style"
-          value={formData.style}
-          onChange={handleFieldChange('style')}
+          name="itemType"
+          value={formData.itemType}
+          onChange={handleFieldChange('itemType')}
           options={[
-            { value: 'streetwear', label: 'Streetwear' },
-            { value: 'classic', label: 'Classic' },
-            { value: 'artistic', label: 'Artistic' },
-            { value: 'custom', label: 'Custom' },
+            { value: 'hoodie', label: 'Hoodie' },
+            { value: 'tshirt', label: 'T-Shirt' },
+            { value: 'coaster', label: 'Coaster' },
+            { value: 'other', label: 'Other' },
           ]}
           className="mt-2 bg-slate-700 text-white"
+        />
+      </div>
+
+      {/* Quantity */}
+      <div>
+        <label className="block text-sm font-semibold text-white">
+          Quantity *
+        </label>
+        <Input
+          type="number"
+          min="1"
+          max="250"
+          name="quantity"
+          value={formData.quantity}
+          onChange={handleChange}
+          required
+          className="mt-2 bg-slate-700 text-white placeholder-slate-400"
         />
       </div>
 
@@ -214,12 +240,27 @@ export function CustomOrderForm() {
         />
       </div>
 
+      {/* Reference Link */}
+      <div>
+        <label className="block text-sm font-semibold text-white">
+          Design Reference Link
+        </label>
+        <Input
+          type="url"
+          name="referenceUrl"
+          placeholder="https://drive.google.com/..."
+          value={formData.referenceUrl}
+          onChange={handleChange}
+          className="mt-2 bg-slate-700 text-white placeholder-slate-400"
+        />
+      </div>
+
       <Button
         type="submit"
         disabled={isSubmitting}
         className="w-full bg-red-600 py-3 font-bold hover:bg-red-700 disabled:opacity-50"
       >
-        {isSubmitting ? 'Submitting...' : 'Submit Order Request'}
+        {isSubmitting ? 'Submitting...' : 'Submit Custom Request'}
       </Button>
     </form>
   );

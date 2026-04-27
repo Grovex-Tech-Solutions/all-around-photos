@@ -29,11 +29,14 @@ export function generateCustomOrderEmail(data: CustomOrderInput): string {
       <div class="field">
         <span class="label">Phone:</span> ${data.phone}
       </div>
-      <div class="field">
-        <span class="label">Style:</span> ${data.style}
+      <div className="field">
+        <span className="label">Item Type:</span> ${data.itemType}
       </div>
       <div class="field">
-        <span class="label">Budget:</span> $${data.budget}
+        <span class="label">Quantity:</span> ${data.quantity}
+      </div>
+      <div class="field">
+        <span class="label">Budget:</span> ${data.budget}
       </div>
       <div class="field">
         <span class="label">Timeline:</span> ${data.timeline}
