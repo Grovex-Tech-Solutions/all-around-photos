@@ -134,18 +134,25 @@ export default function DronePage() {
                 Walk the property before the showing starts.
               </h2>
               <p className="mt-4 max-w-2xl text-zinc-400">
-                The flythrough footage below uses the newly provided media asset and gives prospects a stronger sense of approach, scale, and site context.
+                Full-resolution flythrough media is available on request. This preview still highlights approach, scale, and site context while keeping web delivery fast and reliable.
               </p>
             </div>
             <div className="border-l border-zinc-800 bg-black p-4 lg:p-6">
-              <video
-                controls
-                preload="metadata"
-                className="aspect-video w-full rounded-sm border border-zinc-800 bg-black"
-                poster="/drone/DJI_20251222221530_0060_D.JPG"
-              >
-                <source src="/drone/all-around-flythrough.mp4" type="video/mp4" />
-              </video>
+              <div className="relative aspect-video overflow-hidden rounded-sm border border-zinc-800 bg-black">
+                <Image
+                  src="/drone/DJI_20251222221530_0060_D.JPG"
+                  alt="Drone flythrough preview frame"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-200">
+                    Flythrough reel available on request
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
